@@ -54,19 +54,59 @@ public class ChessPiece {
     public Collection<ChessMove> pieceMoves(ChessBoard board, ChessPosition myPosition) {
         Collection<ChessMove> moves = new java.util.ArrayList<>();
         switch (type) {
+
             case KING:
                 for (int x = -1; x <= 1; x++) {
                     for (int y = -1; y <= 1; y++) {
                         if (x == 0 && y == 0) continue;
-                        addIfValid(board, myPosition, myPosition.getColumn()+x, myPosition.getRow()+y, moves);
+                        addIfValid(board, myPosition, myPosition.getRow() + x, myPosition.getColumn() + y, moves);
                     }
                 }
                 break;
 
-            case QUEEN:
-            case BISHOP:
+
             case KNIGHT:
+                int[][] jumps = {{2, 1}, {2, -1}, {-2, 1}, {-2, -1}, {1, 2}, {-1, 2}, {1, -2}, {-1, -2}};
+                for (int[] j : jumps) {
+                    addIfValid(board, myPosition, myPosition.getRow() + j[0], myPosition.getColumn() + j[1], moves);
+                }
+                break;
+
+
             case ROOK:
+                scanLine(board, myPosition, 1, 0, moves);
+                scanLine(board, myPosition, -1, 0, moves);
+                scanLine(board, myPosition, 0, 1, moves);
+                scanLine(board, myPosition, 0, -1, moves);
+                break;
+
+
+            case BISHOP:
+                scanLine(board, myPosition, 1, 1, moves);
+                scanLine(board, myPosition, 1, -1, moves);
+                scanLine(board, myPosition, -1, 1, moves);
+                scanLine(board, myPosition, -1, -1, moves);
+                break;
+
+
+            case QUEEN:
+                scanLine(board, myPosition, 1, 0, moves);
+                scanLine(board, myPosition, -1, 0, moves);
+                scanLine(board, myPosition, 0, 1, moves);
+                scanLine(board, myPosition, 0, -1, moves);
+                scanLine(board, myPosition, 1, 1, moves);
+                scanLine(board, myPosition, 1, -1, moves);
+                scanLine(board, myPosition, -1, 1, moves);
+                scanLine(board, myPosition, -1, -1, moves);
+                break;
+
+
             case PAWN:
+                pawnMoves(board, myPosition, moves);
+                break;
+        }
+
+        return moves;
     }
+
 }
