@@ -13,6 +13,7 @@ public class ChessPiece {
     public ChessGame.TeamColor pieceColor;
     public ChessPiece.PieceType type;
 
+
     public ChessPiece(ChessGame.TeamColor pieceColor, ChessPiece.PieceType type) {
         this.pieceColor = pieceColor;
         this.type = type;
@@ -58,7 +59,9 @@ public class ChessPiece {
             case KING:
                 for (int x = -1; x <= 1; x++) {
                     for (int y = -1; y <= 1; y++) {
-                        if (x == 0 && y == 0) continue;
+                        if (x == 0 && y == 0) {
+                            continue;
+                        }
                         addIfValid(board, myPosition, myPosition.getRow() + x, myPosition.getColumn() + y, moves);
                     }
                 }
@@ -109,4 +112,46 @@ public class ChessPiece {
         return moves;
     }
 
+
+    private boolean inBounds(int row, int col) {
+        return row >= 1 && row <= 8 && col >= 1 && col <= 8;
+    }
+
+    private void addIfValid(ChessBoard board, ChessPosition origin, int row, int col, Collection<ChessMove> moves) {
+        if (!inBounds(row, col)) {
+            return;
+        }
+
+        ChessPosition destination = new ChessPosition(row, col);
+        ChessPiece target = board.getPiece(destination);
+
+        if (target == null || target.getTeamColor() != pieceColor) {
+            moves.add(new ChessMove(origin, destination, null));
+        }
+    }
+
+    private void scanLine(ChessBoard board, ChessPosition origin, int d_row, int d_col, Collection<ChessMove> moves) {
+        int row = origin.getRow();
+        int col = origin.getColumn();
+
+        while (true) {
+            row += d_row;
+            col += d_col;
+
+            if (!inBounds(row, col)) return;
+
+            ChessPosition destination = new ChessPosition(row, col);
+            ChessPiece target = board.getPiece(destination);
+
+            if (target == null) {
+                moves.add(new ChessMove(origin, destination, null));
+            }
+            else {
+                if (target.getTeamColor() != pieceColor) {
+                    moves.add(new ChessMove(origin, destination, null));
+                }
+                return;
+            }
+        }
+    }
 }
