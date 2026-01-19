@@ -52,6 +52,21 @@ public class ChessPiece {
      * @return Collection of valid moves
      */
     public Collection<ChessMove> pieceMoves(ChessBoard board, ChessPosition myPosition) {
-        throw new RuntimeException("Not implemented");
+        Collection<ChessMove> moves = new java.util.ArrayList<>();
+        switch (type) {
+            case KING:
+                for (int x = -1; x <= 1; x++) {
+                    for (int y = -1; y <= 1; y++) {
+                        if (x == 0 && y == 0) continue;
+                        addIfValid(board, myPosition, myPosition.getColumn()+x, myPosition.getRow()+y, moves);
+                    }
+                }
+                break;
+
+            case QUEEN:
+            case BISHOP:
+            case KNIGHT:
+            case ROOK:
+            case PAWN:
     }
 }
