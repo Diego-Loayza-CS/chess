@@ -8,13 +8,13 @@ package chess;
  */
 public class ChessBoard {
 
-    private ChessPiece[][] board = new ChessPiece[8][8];
+    private final ChessPiece[][] board = new ChessPiece[8][8];
 
     public ChessBoard() {
     }
 
     private void checkBounds(int row, int col) {
-        if (row <= 1  || row >= 8 || col <= 1 || col >= 8) {
+        if (row < 1  || row > 8 || col < 1 || col > 8) {
             throw new IllegalArgumentException("Position out of bounds: (" + row + ", " + col + ")");
         }
     }
@@ -48,7 +48,10 @@ public class ChessBoard {
      * position
      */
     public ChessPiece getPiece(ChessPosition position) {
-        throw new RuntimeException("Not implemented");
+        int row = position.getRow();
+        int col = position.getColumn();
+        if (row < 1 || row > 8 || col < 1 || col > 8) return null;
+        return board[rowToIndex(row)][colToIndex(col)];
     }
 
     /**
@@ -56,6 +59,66 @@ public class ChessBoard {
      * (How the game of chess normally starts)
      */
     public void resetBoard() {
-        throw new RuntimeException("Not implemented");
+        for (int row = 0; row < 8; row++) {
+            for (int col = 0; col < 8; col++) {
+                board[row][col] = null;
+            }
+        }
+        setBackRow(ChessGame.TeamColor.WHITE, 1);
+        setPawnRow(ChessGame.TeamColor.WHITE, 2);
+
+        setPawnRow(ChessGame.TeamColor.BLACK, 7);
+        setBackRow(ChessGame.TeamColor.BLACK, 8);
+    }
+
+    private void setPawnRow(ChessGame.TeamColor color, int row) {
+        for (int col = 1; col <= 8; col++) {
+            addPiece(new ChessPosition(row, col), new ChessPiece(color, ChessPiece.PieceType.PAWN));
+        }
+    }
+
+    private void setBackRow(ChessGame.TeamColor color, int row) {
+        addPiece(new ChessPosition(row, 1), new ChessPiece(color, ChessPiece.PieceType.ROOK));
+        addPiece(new ChessPosition(row, 2), new ChessPiece(color, ChessPiece.PieceType.KNIGHT));
+        addPiece(new ChessPosition(row, 3), new ChessPiece(color, ChessPiece.PieceType.BISHOP));
+        addPiece(new ChessPosition(row, 4), new ChessPiece(color, ChessPiece.PieceType.QUEEN));
+        addPiece(new ChessPosition(row, 5), new ChessPiece(color, ChessPiece.PieceType.KING));
+        addPiece(new ChessPosition(row, 6), new ChessPiece(color, ChessPiece.PieceType.BISHOP));
+        addPiece(new ChessPosition(row, 7), new ChessPiece(color, ChessPiece.PieceType.KNIGHT));
+        addPiece(new ChessPosition(row, 8), new ChessPiece(color, ChessPiece.PieceType.ROOK));
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+
+        ChessBoard that = (ChessBoard) obj;
+
+        for (int row = 0; row < 8; row++) {
+            for (int col = 0; col < 8; col++) {
+                ChessPiece a = this.board[row][col];
+                ChessPiece b = that.board[row][col];
+                if (a == null && b == null) continue;
+                if (a == null || b == null) return false;
+                if (!a.equals(b)) return false;
+            }
+        }
+        return true;
+    }
+
+
+    @Override
+    public int hashCode() {
+        int hash = 1;
+        for (int row = 0; row < 8; row++) {
+            for (int col = 0; col < 8; col++) {
+                hash *= 7;
+                if (board[row][col] != null) {
+                    hash += board[row][col].hashCode();
+                }
+            }
+        }
+        return hash;
     }
 }

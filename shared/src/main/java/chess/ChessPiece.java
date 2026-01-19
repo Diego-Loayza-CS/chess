@@ -159,14 +159,18 @@ public class ChessPiece {
         int col = origin.getColumn();
 
         int row1 = row + dir;
-        ChessPosition destination_1 = new ChessPosition(row1, col);
-        if (!notInBounds(row1, col) && board.getPiece(destination_1) == null) {
-            pawnAddIfValid(origin, destination_1, promotionRow, moves);
+        if (!notInBounds(row1, col)) {
+            ChessPosition destination_1 = new ChessPosition(row1, col);
+            if (board.getPiece(destination_1) == null) {
+                pawnAddIfValid(origin, destination_1, promotionRow, moves);
 
-            int row2 = row + 2 * dir;
-            ChessPosition destination_2 = new ChessPosition(row2, col);
-            if (row == startRow && !notInBounds(row2, col) && board.getPiece(destination_2) == null) {
-                moves.add(new ChessMove(origin, destination_2, null));
+                int row2 = row + 2 * dir;
+                if (!notInBounds(row2, col)) {
+                    ChessPosition destination_2 = new ChessPosition(row2, col);
+                    if (row == startRow && board.getPiece(destination_2) == null) {
+                        moves.add(new ChessMove(origin, destination_2, null));
+                    }
+                }
 
             }
         }
@@ -175,11 +179,14 @@ public class ChessPiece {
             int diag_col = col + diag;
             int diag_row = row + dir;
 
-            ChessPosition destination_3 = new ChessPosition(diag_row, diag_col);
-            ChessPiece target = board.getPiece(destination_3);
-            if (!notInBounds(diag_row, diag_col) && target != null && target.getTeamColor() != pieceColor) {
-                pawnAddIfValid(origin, destination_3, promotionRow, moves);
+            if (!notInBounds(diag_row, diag_col)) {
+                ChessPosition destination_3 = new ChessPosition(diag_row, diag_col);
+                ChessPiece target = board.getPiece(destination_3);
+                if (target != null && target.getTeamColor() != pieceColor) {
+                    pawnAddIfValid(origin, destination_3, promotionRow, moves);
+                }
             }
+
         }
     }
 
