@@ -10,6 +10,7 @@ public class ChessBoard {
 
     private final ChessPiece[][] board = new ChessPiece[8][8];
 
+
     public ChessBoard() {
     }
 
