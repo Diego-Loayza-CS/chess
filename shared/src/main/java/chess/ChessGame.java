@@ -127,4 +127,33 @@ public class ChessGame {
     public ChessBoard getBoard() {
         throw new RuntimeException("Not implemented");
     }
+
+
+
+
+
+
+
+
+
+    private boolean helper_isInCheck(ChessBoard board, TeamColor team_color) {
+        ChessPosition kingPosition = findKing(board, team_color);
+        TeamColor enemy_color = (team_color == TeamColor.WHITE ? TeamColor.BLACK : TeamColor.WHITE);
+
+        for (int row = 1; row <= 8; row++) {
+            for (int col = 1; col <= 8; col++) {
+                ChessPosition from = new ChessPosition(row, col);
+                ChessPiece attacker = board.getPiece(from);
+                if (attacker == null || attacker.getTeamColor() != enemy_color) continue;
+
+                Collection<ChessMove> attacks = attacker.pieceMoves(board, from);
+                for (ChessMove move :attacks) {
+                    if (move.getEndPosition().equals(kingPosition)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
 }
