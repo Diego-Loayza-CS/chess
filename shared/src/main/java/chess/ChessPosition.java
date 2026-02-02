@@ -8,8 +8,8 @@ package chess;
  */
 public class ChessPosition {
 
-    public int row;
-    public int col;
+    private final int row;
+    private final int col;
 
 
     public ChessPosition(int row, int col) {
@@ -18,7 +18,7 @@ public class ChessPosition {
     }
 
     /**
-     * @return which row this position is in
+     * @return which row this position is in.
      * 1 codes for the bottom row
      */
     public int getRow() {
@@ -35,8 +35,12 @@ public class ChessPosition {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (obj == null || getClass() != obj.getClass()) return false;
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
         ChessPosition that = (ChessPosition) obj;
         return row == that.row && col == that.col;
     }

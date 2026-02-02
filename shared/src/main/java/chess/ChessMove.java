@@ -8,9 +8,10 @@ package chess;
  */
 public class ChessMove {
 
-    public ChessPosition startPosition;
-    public ChessPosition endPosition;
-    public ChessPiece.PieceType promotionPiece;
+    private final ChessPosition startPosition;
+    private final ChessPosition endPosition;
+    private final ChessPiece.PieceType promotionPiece;
+
 
     public ChessMove(ChessPosition startPosition, ChessPosition endPosition,
                      ChessPiece.PieceType promotionPiece) {
@@ -45,13 +46,18 @@ public class ChessMove {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (obj == null || getClass() != obj.getClass()) return false;
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+
         ChessMove that = (ChessMove) obj;
-        if (promotionPiece == null) {
-            if (that.promotionPiece == null) {
-                return startPosition.equals(that.startPosition) && endPosition.equals(that.endPosition);
-            }
+        if (promotionPiece == null && that.promotionPiece == null) {
+            return startPosition.equals(that.startPosition) && endPosition.equals(that.endPosition);
+        }
+        if (promotionPiece == null || that.promotionPiece == null) {
             return false;
         }
         return startPosition.equals(that.startPosition) && endPosition.equals(that.endPosition) && promotionPiece.equals(that.promotionPiece);
@@ -59,9 +65,7 @@ public class ChessMove {
 
     @Override
     public int hashCode() {
-        if (promotionPiece == null) {
-            return 31 * startPosition.hashCode() + endPosition.hashCode();
-        }
-        return 31 * startPosition.hashCode() * (endPosition.hashCode() + promotionPiece.hashCode());
+        int promoHash = (promotionPiece == null ? 1 : promotionPiece.hashCode());
+        return 17 * startPosition.hashCode() * (endPosition.hashCode() + promoHash);
     }
 }

@@ -13,19 +13,27 @@ public class ChessBoard {
     public ChessBoard() {
     }
 
-    private void checkBounds(int row, int col) {
-        if (row < 1  || row > 8 || col < 1 || col > 8) {
-            throw new IllegalArgumentException("Position out of bounds: (" + row + ", " + col + ")");
+
+    public static boolean notInBounds(int row, int col) {
+        return row < 1 || row > 8 || col < 1 || col > 8;
+    }
+
+    public static int[][] join_arrays(int[][] array_a, int[][] array_b) {
+        int[][] result = new int[array_a.length + array_b.length][2];
+        int i = 0;
+        for (int[] tuple : array_a) {
+            result[i++] = tuple;
         }
+        for (int[] tuple : array_b) {
+            result[i++] = tuple;
+        }
+        return result;
     }
 
-    private int rowToIndex(int row) {
-        return row - 1;
+    private static int toIndex(int location) {
+        return location - 1;
     }
 
-    private int colToIndex(int col) {
-        return col - 1;
-    }
 
     /**
      * Adds a chess piece to the chessboard
@@ -36,8 +44,10 @@ public class ChessBoard {
     public void addPiece(ChessPosition position, ChessPiece piece) {
         int row = position.getRow();
         int col = position.getColumn();
-        checkBounds(row, col);
-        board[rowToIndex(row)][colToIndex(col)] = piece;
+        if (notInBounds(row, col)) {
+            throw new IllegalArgumentException("Position out of bounds: (" + row + ", " + col + ")");
+        }
+        board[toIndex(row)][toIndex(col)] = piece;
     }
 
     /**
@@ -50,8 +60,10 @@ public class ChessBoard {
     public ChessPiece getPiece(ChessPosition position) {
         int row = position.getRow();
         int col = position.getColumn();
-        if (row < 1 || row > 8 || col < 1 || col > 8) return null;
-        return board[rowToIndex(row)][colToIndex(col)];
+        if (notInBounds(row, col)) {
+            return null;
+        }
+        return board[toIndex(row)][toIndex(col)];
     }
 
     /**
@@ -90,18 +102,29 @@ public class ChessBoard {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (obj == null || getClass() != obj.getClass()) return false;
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
 
         ChessBoard that = (ChessBoard) obj;
 
-        for (int row = 0; row < 8; row++) {
-            for (int col = 0; col < 8; col++) {
-                ChessPiece a = this.board[row][col];
-                ChessPiece b = that.board[row][col];
-                if (a == null && b == null) continue;
-                if (a == null || b == null) return false;
-                if (!a.equals(b)) return false;
+        for (int row = 1; row <= 8; row++) {
+            for (int col = 1; col <= 8; col++) {
+                ChessPosition position = new ChessPosition(row, col);
+                ChessPiece a = this.getPiece(position);
+                ChessPiece b = that.getPiece(position);
+                if (a == null && b == null) {
+                    continue;
+                }
+                if (a == null || b == null) {
+                    return false;
+                }
+                if (!a.equals(b)) {
+                    return false;
+                }
             }
         }
         return true;
@@ -113,7 +136,7 @@ public class ChessBoard {
         int hash = 1;
         for (int row = 0; row < 8; row++) {
             for (int col = 0; col < 8; col++) {
-                hash *= 7;
+                hash *= 17;
                 if (board[row][col] != null) {
                     hash += board[row][col].hashCode();
                 }

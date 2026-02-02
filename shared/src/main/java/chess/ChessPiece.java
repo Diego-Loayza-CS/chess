@@ -10,8 +10,13 @@ import java.util.Collection;
  */
 public class ChessPiece {
 
-    public ChessGame.TeamColor pieceColor;
-    public ChessPiece.PieceType type;
+    private final ChessGame.TeamColor pieceColor;
+    private final ChessPiece.PieceType type;
+
+    private final int[][] STRAIGHT_MOVES = {{-1, 0}, {0, -1}, {1, 0}, {0, 1}};
+    private final int[][] DIAGONAL_MOVES = {{-1, -1}, {-1, 1}, {1, -1}, {1, 1}};
+    private final int[][] SURROUNDING_MOVES = ChessBoard.join_arrays(STRAIGHT_MOVES, DIAGONAL_MOVES);
+    private final int[][] KNIGHT_MOVES = {{2, 1}, {2, -1}, {-2, 1}, {-2, -1}, {1, 2}, {-1, 2}, {1, -2}, {-1, -2}};
 
 
     public ChessPiece(ChessGame.TeamColor pieceColor, ChessPiece.PieceType type) {
@@ -57,46 +62,37 @@ public class ChessPiece {
         switch (type) {
 
             case KING:
-                int[][] king_moves = {{-1, -1}, {-1, 0}, {-1, 1}, {0, -1}, {0, 1}, {1, -1}, {1, 0}, {1, 1}};
-                for (int[] i : king_moves) {
+                for (int[] i : SURROUNDING_MOVES) {
                     addIfValid(board, myPosition, myPosition.getRow() + i[0], myPosition.getColumn() + i[1], moves);
                 }
                 break;
 
 
             case KNIGHT:
-                int[][] knight_moves = {{2, 1}, {2, -1}, {-2, 1}, {-2, -1}, {1, 2}, {-1, 2}, {1, -2}, {-1, -2}};
-                for (int[] i : knight_moves) {
+                for (int[] i : KNIGHT_MOVES) {
                     addIfValid(board, myPosition, myPosition.getRow() + i[0], myPosition.getColumn() + i[1], moves);
                 }
                 break;
 
 
             case ROOK:
-                scanLine(board, myPosition, 1, 0, moves);
-                scanLine(board, myPosition, -1, 0, moves);
-                scanLine(board, myPosition, 0, 1, moves);
-                scanLine(board, myPosition, 0, -1, moves);
+                for (int[] i : STRAIGHT_MOVES) {
+                    scanLine(board, myPosition, i[0], i[1], moves);
+                }
                 break;
 
 
             case BISHOP:
-                scanLine(board, myPosition, 1, 1, moves);
-                scanLine(board, myPosition, 1, -1, moves);
-                scanLine(board, myPosition, -1, 1, moves);
-                scanLine(board, myPosition, -1, -1, moves);
+                for (int[] i : DIAGONAL_MOVES) {
+                    scanLine(board, myPosition, i[0], i[1], moves);
+                }
                 break;
 
 
             case QUEEN:
-                scanLine(board, myPosition, 1, 0, moves);
-                scanLine(board, myPosition, -1, 0, moves);
-                scanLine(board, myPosition, 0, 1, moves);
-                scanLine(board, myPosition, 0, -1, moves);
-                scanLine(board, myPosition, 1, 1, moves);
-                scanLine(board, myPosition, 1, -1, moves);
-                scanLine(board, myPosition, -1, 1, moves);
-                scanLine(board, myPosition, -1, -1, moves);
+                for (int[] i : SURROUNDING_MOVES) {
+                    scanLine(board, myPosition, i[0], i[1], moves);
+                }
                 break;
 
 
@@ -109,12 +105,12 @@ public class ChessPiece {
     }
 
 
-    private boolean notInBounds(int row, int col) {
-        return row < 1 || row > 8 || col < 1 || col > 8;
-    }
+
 
     private void addIfValid(ChessBoard board, ChessPosition origin, int d_row, int d_col, Collection<ChessMove> moves) {
-        if (notInBounds(d_row, d_col)) return;
+        if (ChessBoard.notInBounds(d_row, d_col)) {
+            return;
+        }
 
         ChessPosition destination = new ChessPosition(d_row, d_col);
         ChessPiece target = board.getPiece(destination);
@@ -132,7 +128,7 @@ public class ChessPiece {
             d_row += dir_row;
             d_col += dir_col;
 
-            if (notInBounds(d_row, d_col)) {
+            if (ChessBoard.notInBounds(d_row, d_col)) {
                 return;
             }
 
@@ -159,13 +155,13 @@ public class ChessPiece {
         int col = origin.getColumn();
 
         int row1 = row + dir;
-        if (!notInBounds(row1, col)) {
+        if (!ChessBoard.notInBounds(row1, col)) {
             ChessPosition destination_1 = new ChessPosition(row1, col);
             if (board.getPiece(destination_1) == null) {
                 pawnAddIfValid(origin, destination_1, promotionRow, moves);
 
                 int row2 = row + 2 * dir;
-                if (!notInBounds(row2, col)) {
+                if (!ChessBoard.notInBounds(row2, col)) {
                     ChessPosition destination_2 = new ChessPosition(row2, col);
                     if (row == startRow && board.getPiece(destination_2) == null) {
                         moves.add(new ChessMove(origin, destination_2, null));
@@ -175,11 +171,11 @@ public class ChessPiece {
             }
         }
 
-        for (int diag : new int[] {-1, 1}) {
+        for (int diag : new int[]{-1, 1}) {
             int diag_col = col + diag;
             int diag_row = row + dir;
 
-            if (!notInBounds(diag_row, diag_col)) {
+            if (!ChessBoard.notInBounds(diag_row, diag_col)) {
                 ChessPosition destination_3 = new ChessPosition(diag_row, diag_col);
                 ChessPiece target = board.getPiece(destination_3);
                 if (target != null && target.getTeamColor() != pieceColor) {
@@ -191,23 +187,25 @@ public class ChessPiece {
     }
 
 
-    private void pawnAddIfValid (ChessPosition origin, ChessPosition destination, int promotionRow, Collection<ChessMove> moves) {
+    private void pawnAddIfValid(ChessPosition origin, ChessPosition destination, int promotionRow, Collection<ChessMove> moves) {
         if (destination.getRow() == promotionRow) {
             moves.add(new ChessMove(origin, destination, PieceType.QUEEN));
             moves.add(new ChessMove(origin, destination, PieceType.ROOK));
             moves.add(new ChessMove(origin, destination, PieceType.BISHOP));
             moves.add(new ChessMove(origin, destination, PieceType.KNIGHT));
-        }
-
-        else {
+        } else {
             moves.add(new ChessMove(origin, destination, null));
         }
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (obj == null || getClass() != obj.getClass()) return false;
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
         ChessPiece that = (ChessPiece) obj;
         return pieceColor == that.pieceColor && type == that.type;
     }
