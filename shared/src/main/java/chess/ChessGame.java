@@ -281,7 +281,7 @@ public class ChessGame {
             return false;
         }
         ChessGame that = (ChessGame) obj;
-        return teamTurn == that.teamTurn && board == that.board;
+        return teamTurn == that.teamTurn && board.equals(that.board);
     }
 
     @Override
