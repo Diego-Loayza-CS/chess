@@ -178,4 +178,19 @@ public class ChessGame {
 
 
 
+    private ChessBoard copyBoard(ChessBoard original) {
+        ChessBoard copy = new ChessBoard();
+        for (int row = 1; row <= 8; row++) {
+            for (int col = 1; col <= 8; col++) {
+                ChessPosition position = new ChessPosition(row, col);
+                ChessPiece piece = original.getPiece(position);
+                if (piece == null) continue;
+                copy.addPiece(position, piece);
+                }
+            }
+        return copy;
+        }
+    }
+
+
 }
