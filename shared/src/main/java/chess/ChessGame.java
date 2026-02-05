@@ -77,6 +77,18 @@ public class ChessGame {
         TeamColor pieceColor = piece.getTeamColor();
 
         Collection<ChessMove> allMoves = piece.pieceMoves(board, startPosition);
+
+        if (piece.getPieceType() == ChessPiece.PieceType.KING) {
+            allMoves.addAll(getCastlingMoves(startPosition, pieceColor));
+        }
+
+        if (piece.getPieceType() == ChessPiece.PieceType.PAWN) {
+            ChessMove ep = getEnPassantMove(startPosition, pieceColor);
+            if (ep != null) {
+                allMoves.add(ep);
+            }
+        }
+
         Collection<ChessMove> legalMoves = new java.util.ArrayList<>();
 
         for (ChessMove move : allMoves) {
@@ -102,19 +114,31 @@ public class ChessGame {
 
         ChessPosition start = move.getStartPosition();
         ChessPiece piece = board.getPiece(start);
-        Collection<ChessMove> legalMoves = validMoves(start);
-
         if (piece == null) {
             throw new InvalidMoveException("No piece at start position");
         }
         if (piece.getTeamColor() != teamTurn) {
             throw new InvalidMoveException("Not your turn");
         }
+
+        Collection<ChessMove> legalMoves = validMoves(start);
         if (legalMoves == null || !containsMove(legalMoves, move)) {
             throw new InvalidMoveException("Illegal move");
         }
 
+        enPassantTarget = null;
+        enPassantPawnPosition = null;
+        updateMovedFlagsBeforeMove(piece, start);
+
         applyMove(board, move);
+
+        if (isCastlingMove(piece, move)) {
+            updateRookMovedAfterCastling(piece.getTeamColor(), move.getEndPosition());
+        }
+        if (piece.getPieceType() == ChessPiece.PieceType.PAWN) {
+            updateEnPassantAfterPawnMove(piece, move);
+        }
+
         teamTurn = getOppositeTeam(teamTurn);
     }
 
