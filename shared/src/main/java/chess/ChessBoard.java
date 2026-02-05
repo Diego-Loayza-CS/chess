@@ -14,28 +14,6 @@ public class ChessBoard {
     public ChessBoard() {
     }
 
-
-    public static boolean notInBounds(int row, int col) {
-        return row < 1 || row > 8 || col < 1 || col > 8;
-    }
-
-    public static int[][] join_arrays(int[][] array_a, int[][] array_b) {
-        int[][] result = new int[array_a.length + array_b.length][2];
-        int i = 0;
-        for (int[] tuple : array_a) {
-            result[i++] = tuple;
-        }
-        for (int[] tuple : array_b) {
-            result[i++] = tuple;
-        }
-        return result;
-    }
-
-    private static int toIndex(int location) {
-        return location - 1;
-    }
-
-
     /**
      * Adds a chess piece to the chessboard
      *
@@ -84,6 +62,44 @@ public class ChessBoard {
         setBackRow(ChessGame.TeamColor.BLACK, 8);
     }
 
+
+    public static boolean notInBounds(int row, int col) {
+        return row < 1 || row > 8 || col < 1 || col > 8;
+    }
+
+    public static int[][] join_arrays(int[][] array_a, int[][] array_b) {
+        int[][] result = new int[array_a.length + array_b.length][2];
+        int i = 0;
+        for (int[] tuple : array_a) {
+            result[i++] = tuple;
+        }
+        for (int[] tuple : array_b) {
+            result[i++] = tuple;
+        }
+        return result;
+    }
+
+    public static ChessBoard copyBoard(ChessBoard original) {
+        ChessBoard copy = new ChessBoard();
+        for (int row = 1; row <= 8; row++) {
+            for (int col = 1; col <= 8; col++) {
+                ChessPosition position = new ChessPosition(row, col);
+                ChessPiece piece = original.getPiece(position);
+                if (piece == null) {
+                    copy.addPiece(position, null);
+                } else {
+                    copy.addPiece(position, new ChessPiece(piece.getTeamColor(), piece.getPieceType()));
+                }
+            }
+        }
+        return copy;
+    }
+
+    private static int toIndex(int location) {
+        return location - 1;
+    }
+
+
     private void setPawnRow(ChessGame.TeamColor color, int row) {
         for (int col = 1; col <= 8; col++) {
             addPiece(new ChessPosition(row, col), new ChessPiece(color, ChessPiece.PieceType.PAWN));
@@ -100,6 +116,7 @@ public class ChessBoard {
         addPiece(new ChessPosition(row, 7), new ChessPiece(color, ChessPiece.PieceType.KNIGHT));
         addPiece(new ChessPosition(row, 8), new ChessPiece(color, ChessPiece.PieceType.ROOK));
     }
+
 
     @Override
     public boolean equals(Object obj) {
