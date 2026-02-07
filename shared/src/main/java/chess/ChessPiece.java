@@ -104,7 +104,11 @@ public class ChessPiece {
         return moves;
     }
 
-
+    public static int getPawnDirection(ChessGame.TeamColor pawnColor) {
+        if (pawnColor == ChessGame.TeamColor.WHITE) return 1;
+        if (pawnColor == ChessGame.TeamColor.BLACK) return -1;
+        throw new IllegalArgumentException("Invalid color: " + pawnColor);
+    }
 
 
     private void addIfValid(ChessBoard board, ChessPosition origin, int d_row, int d_col, Collection<ChessMove> moves) {
@@ -147,7 +151,7 @@ public class ChessPiece {
     }
 
     private void pawnMoves(ChessBoard board, ChessPosition origin, Collection<ChessMove> moves) {
-        int dir = (pieceColor == ChessGame.TeamColor.WHITE ? 1 : -1);
+        int dir = getPawnDirection(pieceColor);
         int startRow = (pieceColor == ChessGame.TeamColor.WHITE ? 2 : 7);
         int promotionRow = (pieceColor == ChessGame.TeamColor.WHITE ? 8 : 1);
 
