@@ -67,13 +67,13 @@ public class ChessBoard {
         return row < 1 || row > 8 || col < 1 || col > 8;
     }
 
-    public static int[][] join_arrays(int[][] array_a, int[][] array_b) {
-        int[][] result = new int[array_a.length + array_b.length][2];
+    public static int[][] joinArrays(int[][] arrayA, int[][] arrayB) {
+        int[][] result = new int[arrayA.length + arrayB.length][2];
         int i = 0;
-        for (int[] tuple : array_a) {
+        for (int[] tuple : arrayA) {
             result[i++] = tuple;
         }
-        for (int[] tuple : array_b) {
+        for (int[] tuple : arrayB) {
             result[i++] = tuple;
         }
         return result;

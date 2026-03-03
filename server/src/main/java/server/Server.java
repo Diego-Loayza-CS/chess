@@ -90,7 +90,9 @@ public class Server {
         // Logout
         javalin.delete("/session", ctx -> {
             String token = requireAuth(ctx);
-            if (token == null) return;
+            if (token == null) {
+                return;
+            }
 
             AuthData auth = dataAccess.getAuth(token);
             if (auth == null) {
@@ -105,7 +107,9 @@ public class Server {
         // List games
         javalin.get("/game", ctx -> {
             String token = requireAuth(ctx);
-            if (token == null) return;
+            if (token == null) {
+                return;
+            }
 
             AuthData auth = dataAccess.getAuth(token);
             if (auth == null) {
@@ -131,7 +135,9 @@ public class Server {
         // Create game
         javalin.post("/game", ctx -> {
             String token = requireAuth(ctx);
-            if (token == null) return;
+            if (token == null) {
+                return;
+            }
 
             AuthData auth = dataAccess.getAuth(token);
             if (auth == null) {
@@ -155,7 +161,9 @@ public class Server {
         // Join game
         javalin.put("/game", ctx -> {
             String token = requireAuth(ctx);
-            if (token == null) return;
+            if (token == null) {
+                return;
+            }
 
             AuthData auth = dataAccess.getAuth(token);
             if (auth == null) {
@@ -220,7 +228,9 @@ public class Server {
     private <T> T safeBody(Context ctx, Class<T> clazz) {
         try {
             String body = ctx.body();
-            if (body == null || body.isBlank()) return null;
+            if (body == null || body.isBlank()) {
+                return null;
+            }
             return gson.fromJson(body, clazz);
         } catch (Exception e) {
             return null;
@@ -234,7 +244,9 @@ public class Server {
 
     private String requireAuth(Context ctx) {
         String token = ctx.header("authorization");
-        if (token == null) token = ctx.header("Authorization");
+        if (token == null) {
+            token = ctx.header("Authorization");
+        }
 
         if (token == null || token.isBlank()) {
             unauthorized(ctx);
