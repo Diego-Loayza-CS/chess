@@ -1,102 +1,206 @@
 package service;
 
-import chess.ChessGame;
-import org.junit.jupiter.api.*;
-import passoff.model.*;
-import passoff.server.TestServerFacade;
-import server.Server;
+import dataaccess.DataAccess;
+import dataaccess.MemoryDataAccess;
+import model.request.CreateGameRequest;
+import model.request.JoinGameRequest;
+import model.request.LoginRequest;
+import model.request.RegisterRequest;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import java.net.HttpURLConnection;
+import java.lang.reflect.Array;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+import static org.junit.jupiter.api.Assertions.*;
+
 public class UnitTests {
 
-    private static Server server;
-    private static TestServerFacade serverFacade;
-
-    private static TestUser userA;
-    private static TestUser userB;
-
-    private String authA;
-
-    @AfterAll
-    static void stopServer() {
-        server.stop();
-    }
-
-    @BeforeAll
-    static void init() {
-        server = new Server();
-        var port = server.run(0);
-        serverFacade = new TestServerFacade("localhost", Integer.toString(port));
-
-        userA = new TestUser("UserA", "passA", "a@mail.com");
-        userB = new TestUser("UserB", "passB", "b@mail.com");
-    }
+    private DataAccess dataAccess;
+    private ClearService clearService;
+    private UserService userService;
+    private SessionService sessionService;
+    private GameService gameService;
 
     @BeforeEach
     void setup() {
-        serverFacade.clear();
-        TestAuthResult reg = serverFacade.register(userA);
-        authA = reg.getAuthToken();
+        dataAccess = new MemoryDataAccess();
+        clearService = new ClearService(dataAccess);
+        userService = new UserService(dataAccess);
+        sessionService = new SessionService(dataAccess);
+        gameService = new GameService(dataAccess);
     }
 
     @Test
-    @Order(1)
-    void staticFiles() {
-        String html = serverFacade.file("/").replaceAll("\r", "");
-        Assertions.assertEquals(HttpURLConnection.HTTP_OK, serverFacade.getStatusCode());
-        Assertions.assertNotNull(html);
-        Assertions.assertTrue(html.contains("CS 240 Chess Server Web API"));
+    void clearSuccess() throws Exception {
+        Object reg = userService.register(registerReq("u", "p", "e@mail.com"));
+        String token = (String) read(reg, "authToken", "getAuthToken");
+        assertNotNull(token);
+        clearService.clear();
+        assertThrows(SecurityException.class, () -> sessionService.login(loginReq("u", "p")));
     }
 
     @Test
-    @Order(2)
-    void registerSuccess() {
-        TestAuthResult reg = serverFacade.register(userB);
-        Assertions.assertEquals(HttpURLConnection.HTTP_OK, serverFacade.getStatusCode());
-        Assertions.assertEquals(userB.getUsername(), reg.getUsername());
-        Assertions.assertNotNull(reg.getAuthToken());
+    void clearDoesNotThrow() {
+        assertDoesNotThrow(() -> clearService.clear());
     }
 
     @Test
-    @Order(3)
-    void loginBadRequest() {
-        TestAuthResult r1 = serverFacade.login(new TestUser(null, userA.getPassword()));
-        Assertions.assertEquals(HttpURLConnection.HTTP_BAD_REQUEST, serverFacade.getStatusCode());
-        Assertions.assertNull(r1.getUsername());
-        Assertions.assertNull(r1.getAuthToken());
-
-        TestAuthResult r2 = serverFacade.login(new TestUser(userA.getUsername(), null));
-        Assertions.assertEquals(HttpURLConnection.HTTP_BAD_REQUEST, serverFacade.getStatusCode());
-        Assertions.assertNull(r2.getUsername());
-        Assertions.assertNull(r2.getAuthToken());
+    void registerSuccess() throws Exception {
+        Object reg = userService.register(registerReq("u", "p", "e@mail.com"));
+        String token = (String) read(reg, "authToken", "getAuthToken");
+        assertNotNull(token);
     }
 
     @Test
-    @Order(4)
+    void registerBadRequest() {
+        RegisterRequest req = new RegisterRequest();
+        req.username = null;
+        req.password = "p";
+        req.email = "e@mail.com";
+        assertThrows(IllegalArgumentException.class, () -> userService.register(req));
+    }
+
+    @Test
+    void loginSuccess() throws Exception {
+        userService.register(registerReq("u", "p", "e@mail.com"));
+        Object login = sessionService.login(loginReq("u", "p"));
+        String token = (String) read(login, "authToken", "getAuthToken");
+        assertNotNull(token);
+    }
+
+    @Test
+    void loginUnauthorized() throws Exception {
+        userService.register(registerReq("u", "p", "e@mail.com"));
+        assertThrows(SecurityException.class, () -> sessionService.login(loginReq("u", "bad")));
+    }
+
+    @Test
+    void logoutSuccess() throws Exception {
+        Object reg = userService.register(registerReq("u", "p", "e@mail.com"));
+        String token = (String) read(reg, "authToken", "getAuthToken");
+        sessionService.logout(token);
+        assertThrows(SecurityException.class, () -> gameService.listGames(token));
+    }
+
+    @Test
+    void logoutUnauthorized() {
+        assertThrows(SecurityException.class, () -> sessionService.logout("bad-token"));
+    }
+
+    @Test
+    void createGameSuccess() throws Exception {
+        Object reg = userService.register(registerReq("u", "p", "e@mail.com"));
+        String token = (String) read(reg, "authToken", "getAuthToken");
+        Object created = gameService.createGame(createReq("g"), token);
+        Integer gameId = (Integer) read(created, "gameID", "getGameID");
+        assertNotNull(gameId);
+        assertTrue(gameId > 0);
+    }
+
+    @Test
     void createGameUnauthorized() {
-        serverFacade.logout(authA);
-        TestCreateResult create = serverFacade.createGame(new TestCreateRequest("G"), authA);
-        Assertions.assertEquals(HttpURLConnection.HTTP_UNAUTHORIZED, serverFacade.getStatusCode());
-        Assertions.assertNull(create.getGameID());
+        assertThrows(SecurityException.class, () -> gameService.createGame(createReq("g"), "bad-token"));
     }
 
     @Test
-    @Order(5)
-    void joinStealColorForbidden() {
-        TestCreateResult created = serverFacade.createGame(new TestCreateRequest("Seat"), authA);
-        Assertions.assertEquals(HttpURLConnection.HTTP_OK, serverFacade.getStatusCode());
+    void listGamesSuccess() throws Exception {
+        Object reg = userService.register(registerReq("u", "p", "e@mail.com"));
+        String token = (String) read(reg, "authToken", "getAuthToken");
+        gameService.createGame(createReq("g"), token);
 
-        TestJoinRequest joinBlack = new TestJoinRequest(ChessGame.TeamColor.BLACK, created.getGameID());
-        TestResult join1 = serverFacade.joinPlayer(joinBlack, authA);
-        Assertions.assertEquals(HttpURLConnection.HTTP_OK, serverFacade.getStatusCode());
+        Object list = gameService.listGames(token);
+        Object games = read(list, "games", "getGames");
+        assertNotNull(games);
+        assertEquals(1, sizeOf(games));
+    }
 
-        TestAuthResult regB = serverFacade.register(userB);
-        Assertions.assertEquals(HttpURLConnection.HTTP_OK, serverFacade.getStatusCode());
+    @Test
+    void listGamesUnauthorized() {
+        assertThrows(SecurityException.class, () -> gameService.listGames("bad-token"));
+    }
 
-        TestResult join2 = serverFacade.joinPlayer(joinBlack, regB.getAuthToken());
-        Assertions.assertEquals(HttpURLConnection.HTTP_FORBIDDEN, serverFacade.getStatusCode());
-        Assertions.assertNotNull(join2.getMessage());
+    @Test
+    void joinGameSuccess() throws Exception {
+        Object reg = userService.register(registerReq("u", "p", "e@mail.com"));
+        String token = (String) read(reg, "authToken", "getAuthToken");
+        Object created = gameService.createGame(createReq("g"), token);
+        Integer gameId = (Integer) read(created, "gameID", "getGameID");
+
+        gameService.joinGame(joinReq("WHITE", gameId), token);
+
+        Object list = gameService.listGames(token);
+        Object games = read(list, "games", "getGames");
+        Object first = firstOf(games);
+        Object whiteUsername = read(first, "whiteUsername", "getWhiteUsername");
+        assertEquals("u", whiteUsername);
+    }
+
+    @Test
+    void joinGameStealColor() throws Exception {
+        Object regA = userService.register(registerReq("a", "p", "a@mail.com"));
+        Object regB = userService.register(registerReq("b", "p", "b@mail.com"));
+        String tokenA = (String) read(regA, "authToken", "getAuthToken");
+        String tokenB = (String) read(regB, "authToken", "getAuthToken");
+
+        Object created = gameService.createGame(createReq("g"), tokenA);
+        Integer gameId = (Integer) read(created, "gameID", "getGameID");
+
+        gameService.joinGame(joinReq("WHITE", gameId), tokenA);
+        assertThrows(IllegalStateException.class, () -> gameService.joinGame(joinReq("WHITE", gameId), tokenB));
+    }
+
+    private RegisterRequest registerReq(String u, String p, String e) {
+        RegisterRequest req = new RegisterRequest();
+        req.username = u;
+        req.password = p;
+        req.email = e;
+        return req;
+    }
+
+    private LoginRequest loginReq(String u, String p) {
+        LoginRequest req = new LoginRequest();
+        req.username = u;
+        req.password = p;
+        return req;
+    }
+
+    private CreateGameRequest createReq(String name) {
+        CreateGameRequest req = new CreateGameRequest();
+        req.gameName = name;
+        return req;
+    }
+
+    private JoinGameRequest joinReq(String color, Integer gameId) {
+        JoinGameRequest req = new JoinGameRequest();
+        req.playerColor = color;
+        req.gameID = gameId;
+        return req;
+    }
+
+    private Object read(Object obj, String fieldName, String getterName) throws Exception {
+        try {
+            Method m = obj.getClass().getMethod(getterName);
+            return m.invoke(obj);
+        } catch (NoSuchMethodException ignored) {
+            Field f = obj.getClass().getDeclaredField(fieldName);
+            f.setAccessible(true);
+            return f.get(obj);
+        }
+    }
+
+    private int sizeOf(Object games) {
+        if (games == null) return 0;
+        if (games.getClass().isArray()) return Array.getLength(games);
+        if (games instanceof java.util.Collection<?> c) return c.size();
+        return 0;
+    }
+
+    private Object firstOf(Object games) {
+        if (games.getClass().isArray()) return Array.get(games, 0);
+        if (games instanceof java.util.List<?> list) return list.get(0);
+        if (games instanceof java.util.Collection<?> c) return c.iterator().next();
+        throw new IllegalStateException("Unsupported games container");
     }
 }
