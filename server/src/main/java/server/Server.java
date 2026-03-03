@@ -33,14 +33,20 @@ public class Server {
     }
 
     private void registerRoutes() {
+        registerDbRoutes();
+        registerUserRoutes();
+        registerSessionRoutes();
+        registerGameRoutes();
+    }
 
-        // Clear application
+    private void registerDbRoutes() {
         javalin.delete("/db", ctx -> {
             dataAccess.clear();
             okEmpty(ctx);
         });
+    }
 
-        // Register
+    private void registerUserRoutes() {
         javalin.post("/user", ctx -> {
             RegisterRequest req = safeBody(ctx, RegisterRequest.class);
             if (req == null || isBlank(req.username) || isBlank(req.password) || isBlank(req.email)) {
@@ -63,8 +69,9 @@ public class Server {
             ctx.status(200);
             writeJson(ctx, new RegisterResult(req.username, token));
         });
+    }
 
-        // Login
+    private void registerSessionRoutes() {
         javalin.post("/session", ctx -> {
             LoginRequest req = safeBody(ctx, LoginRequest.class);
 
@@ -74,7 +81,6 @@ public class Server {
             }
 
             UserData user = dataAccess.getUser(req.username);
-
             if (user == null || user.password == null || !user.password.equals(req.password)) {
                 unauthorized(ctx);
                 return;
@@ -87,7 +93,6 @@ public class Server {
             writeJson(ctx, new LoginResult(req.username, token));
         });
 
-        // Logout
         javalin.delete("/session", ctx -> {
             String token = requireAuth(ctx);
             if (token == null) {
@@ -103,8 +108,9 @@ public class Server {
             dataAccess.deleteAuth(token);
             okEmpty(ctx);
         });
+    }
 
-        // List games
+    private void registerGameRoutes() {
         javalin.get("/game", ctx -> {
             String token = requireAuth(ctx);
             if (token == null) {
@@ -121,18 +127,13 @@ public class Server {
             List<GameListItem> items = new ArrayList<>();
 
             for (GameData g : games) {
-                items.add(new GameListItem(
-                        g.gameID,
-                        g.whiteUsername,
-                        g.blackUsername,
-                        g.gameName));
+                items.add(new GameListItem(g.gameID, g.whiteUsername, g.blackUsername, g.gameName));
             }
 
             ctx.status(200);
             writeJson(ctx, new ListGamesResult(items));
         });
 
-        // Create game
         javalin.post("/game", ctx -> {
             String token = requireAuth(ctx);
             if (token == null) {
@@ -158,7 +159,6 @@ public class Server {
             writeJson(ctx, new CreateGameResult(id));
         });
 
-        // Join game
         javalin.put("/game", ctx -> {
             String token = requireAuth(ctx);
             if (token == null) {
@@ -222,8 +222,6 @@ public class Server {
     public void stop() {
         javalin.stop();
     }
-
-    // ---------------- Helpers ----------------
 
     private <T> T safeBody(Context ctx, Class<T> clazz) {
         try {
