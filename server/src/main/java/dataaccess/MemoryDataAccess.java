@@ -10,92 +10,71 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class MemoryDataAccess implements DataAccess {
 
-    private final Map<String, UserData> users = new ConcurrentHashMap<>();
-    private final Map<String, AuthData> authTokens = new ConcurrentHashMap<>();
-    private final Map<Integer, GameData> games = new ConcurrentHashMap<>();
+    private final Map<String, UserData> usersByUsername = new ConcurrentHashMap<>();
+    private final Map<String, AuthData> authByToken = new ConcurrentHashMap<>();
+    private final Map<Integer, GameData> gamesById = new ConcurrentHashMap<>();
     private final AtomicInteger nextGameId = new AtomicInteger(1);
 
     @Override
-    public void clear() {
-        users.clear();
-        authTokens.clear();
-        games.clear();
+    public void clear() throws DataAccessException {
+        usersByUsername.clear();
+        authByToken.clear();
+        gamesById.clear();
         nextGameId.set(1);
     }
 
-    // USERS
     @Override
-    public UserData getUser(String username) {
-        return users.get(username);
+    public UserData getUser(String username) throws DataAccessException {
+        if (username == null) return null;
+        return usersByUsername.get(username);
     }
 
     @Override
     public void insertUser(UserData user) throws DataAccessException {
-        if (user == null || user.username() == null) {
-            throw new DataAccessException("Invalid user");
-        }
-        users.put(user.username(), user);
+        if (user == null || user.username == null) throw new DataAccessException("User or username was null");
+        usersByUsername.put(user.username, user);
     }
 
-    // AUTH
     @Override
-    public AuthData getAuth(String authToken) {
-        return authTokens.get(authToken);
+    public AuthData getAuth(String token) throws DataAccessException {
+        if (token == null) return null;
+        return authByToken.get(token);
     }
 
     @Override
     public void insertAuth(AuthData auth) throws DataAccessException {
-        if (auth == null || auth.authToken() == null) {
-            throw new DataAccessException("Invalid auth");
-        }
-        authTokens.put(auth.authToken(), auth);
+        if (auth == null || auth.authToken == null) throw new DataAccessException("Auth or token was null");
+        authByToken.put(auth.authToken, auth);
     }
 
     @Override
-    public void deleteAuth(String authToken) {
-        authTokens.remove(authToken);
-    }
-
-    // GAMES
-    @Override
-    public GameData getGame(int gameID) {
-        return games.get(gameID);
+    public void deleteAuth(String token) throws DataAccessException {
+        if (token == null) return;
+        authByToken.remove(token);
     }
 
     @Override
-    public Collection<GameData> listGames() {
-        return new ArrayList<>(games.values());
+    public GameData getGame(int gameID) throws DataAccessException {
+        return gamesById.get(gameID);
     }
 
     @Override
     public int insertGame(GameData game) throws DataAccessException {
-        if (game == null) {
-            throw new DataAccessException("Invalid game");
-        }
-
+        if (game == null) throw new DataAccessException("Game was null");
         int id = nextGameId.getAndIncrement();
-        GameData stored = new GameData(
-                id,
-                game.whiteUsername(),
-                game.blackUsername(),
-                game.gameName(),
-                game.game()
-        );
-
-        games.put(id, stored);
+        game.gameID = id;
+        gamesById.put(id, game);
         return id;
     }
 
     @Override
     public void updateGame(GameData game) throws DataAccessException {
-        if (game == null) {
-            throw new DataAccessException("Invalid game");
-        }
+        if (game == null) throw new DataAccessException("Game was null");
+        gamesById.put(game.gameID, game);
+    }
 
-        if (!games.containsKey(game.gameID())) {
-            throw new DataAccessException("Game does not exist");
-        }
-
-        games.put(game.gameID(), game);
+    @Override
+    public List<GameData> listGames() throws DataAccessException {
+        return new ArrayList<>(gamesById.values());
     }
 }

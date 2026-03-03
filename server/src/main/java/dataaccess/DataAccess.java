@@ -4,25 +4,20 @@ import model.AuthData;
 import model.GameData;
 import model.UserData;
 
-import java.util.Collection;
+import java.util.List;
 
 public interface DataAccess {
-
-    // CLEAR
     void clear() throws DataAccessException;
 
-    // USERS
     UserData getUser(String username) throws DataAccessException;
     void insertUser(UserData user) throws DataAccessException;
 
-    // AUTH
-    AuthData getAuth(String authToken) throws DataAccessException;
+    AuthData getAuth(String token) throws DataAccessException;
     void insertAuth(AuthData auth) throws DataAccessException;
-    void deleteAuth(String authToken) throws DataAccessException;
+    void deleteAuth(String token) throws DataAccessException;
 
-    // GAMES
     GameData getGame(int gameID) throws DataAccessException;
-    Collection<GameData> listGames() throws DataAccessException;
     int insertGame(GameData game) throws DataAccessException;
     void updateGame(GameData game) throws DataAccessException;
+    List<GameData> listGames() throws DataAccessException;
 }
