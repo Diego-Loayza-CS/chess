@@ -13,10 +13,10 @@ public class ChessPiece {
     private final ChessGame.TeamColor pieceColor;
     private final ChessPiece.PieceType type;
 
-    private static final int[][] straightMoves = {{-1, 0}, {0, -1}, {1, 0}, {0, 1}};
-    private static final int[][] diagonalMoves = {{-1, -1}, {-1, 1}, {1, -1}, {1, 1}};
-    private static final int[][] surroundingMoves = ChessBoard.joinArrays(straightMoves, diagonalMoves);
-    private static final int[][] knightMoves = {{2, 1}, {2, -1}, {-2, 1}, {-2, -1}, {1, 2}, {-1, 2}, {1, -2}, {-1, -2}};
+    private static final int[][] STRAIGHT_MOVES = {{-1, 0}, {0, -1}, {1, 0}, {0, 1}};
+    private static final int[][] DIAGONAL_MOVES = {{-1, -1}, {-1, 1}, {1, -1}, {1, 1}};
+    private static final int[][] SURROUNDING_MOVES = ChessBoard.joinArrays(STRAIGHT_MOVES, DIAGONAL_MOVES);
+    private static final int[][] KNIGHT_MOVES = {{2, 1}, {2, -1}, {-2, 1}, {-2, -1}, {1, 2}, {-1, 2}, {1, -2}, {-1, -2}};
 
 
     public ChessPiece(ChessGame.TeamColor pieceColor, ChessPiece.PieceType type) {
@@ -62,35 +62,35 @@ public class ChessPiece {
         switch (type) {
 
             case KING:
-                for (int[] i : surroundingMoves) {
+                for (int[] i : SURROUNDING_MOVES) {
                     addIfValid(board, myPosition, myPosition.getRow() + i[0], myPosition.getColumn() + i[1], moves);
                 }
                 break;
 
 
             case KNIGHT:
-                for (int[] i : knightMoves) {
+                for (int[] i : KNIGHT_MOVES) {
                     addIfValid(board, myPosition, myPosition.getRow() + i[0], myPosition.getColumn() + i[1], moves);
                 }
                 break;
 
 
             case ROOK:
-                for (int[] i : straightMoves) {
+                for (int[] i : STRAIGHT_MOVES) {
                     scanLine(board, myPosition, i[0], i[1], moves);
                 }
                 break;
 
 
             case BISHOP:
-                for (int[] i : diagonalMoves) {
+                for (int[] i : DIAGONAL_MOVES) {
                     scanLine(board, myPosition, i[0], i[1], moves);
                 }
                 break;
 
 
             case QUEEN:
-                for (int[] i : surroundingMoves) {
+                for (int[] i : SURROUNDING_MOVES) {
                     scanLine(board, myPosition, i[0], i[1], moves);
                 }
                 break;
