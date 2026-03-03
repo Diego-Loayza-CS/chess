@@ -25,31 +25,41 @@ public class MemoryDataAccess implements DataAccess {
 
     @Override
     public UserData getUser(String username) throws DataAccessException {
-        if (username == null) return null;
+        if (username == null) {
+            return null;
+        }
         return usersByUsername.get(username);
     }
 
     @Override
     public void insertUser(UserData user) throws DataAccessException {
-        if (user == null || user.username == null) throw new DataAccessException("User or username was null");
+        if (user == null || user.username == null) {
+            throw new DataAccessException("User or username was null");
+        }
         usersByUsername.put(user.username, user);
     }
 
     @Override
     public AuthData getAuth(String token) throws DataAccessException {
-        if (token == null) return null;
+        if (token == null) {
+            return null;
+        }
         return authByToken.get(token);
     }
 
     @Override
     public void insertAuth(AuthData auth) throws DataAccessException {
-        if (auth == null || auth.authToken == null) throw new DataAccessException("Auth or token was null");
+        if (auth == null || auth.authToken == null) {
+            throw new DataAccessException("Auth or token was null");
+        }
         authByToken.put(auth.authToken, auth);
     }
 
     @Override
     public void deleteAuth(String token) throws DataAccessException {
-        if (token == null) return;
+        if (token == null) {
+            return;
+        }
         authByToken.remove(token);
     }
 
@@ -60,7 +70,9 @@ public class MemoryDataAccess implements DataAccess {
 
     @Override
     public int insertGame(GameData game) throws DataAccessException {
-        if (game == null) throw new DataAccessException("Game was null");
+        if (game == null) {
+            throw new DataAccessException("Game was null");
+        }
         int id = nextGameId.getAndIncrement();
         game.gameID = id;
         gamesById.put(id, game);
@@ -69,7 +81,9 @@ public class MemoryDataAccess implements DataAccess {
 
     @Override
     public void updateGame(GameData game) throws DataAccessException {
-        if (game == null) throw new DataAccessException("Game was null");
+        if (game == null) {
+            throw new DataAccessException("Game was null");
+        }
         gamesById.put(game.gameID, game);
     }
 

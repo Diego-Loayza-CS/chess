@@ -116,16 +116,13 @@ public class Server {
             if (token == null) {
                 return;
             }
-
             AuthData auth = dataAccess.getAuth(token);
             if (auth == null) {
                 unauthorized(ctx);
                 return;
             }
-
             List<GameData> games = dataAccess.listGames();
             List<GameListItem> items = new ArrayList<>();
-
             for (GameData g : games) {
                 items.add(new GameListItem(g.gameID, g.whiteUsername, g.blackUsername, g.gameName));
             }
@@ -139,19 +136,16 @@ public class Server {
             if (token == null) {
                 return;
             }
-
             AuthData auth = dataAccess.getAuth(token);
             if (auth == null) {
                 unauthorized(ctx);
                 return;
             }
-
             CreateGameRequest req = safeBody(ctx, CreateGameRequest.class);
             if (req == null || isBlank(req.gameName)) {
                 badRequest(ctx);
                 return;
             }
-
             GameData game = new GameData(0, null, null, req.gameName, new ChessGame());
             int id = dataAccess.insertGame(game);
 
@@ -164,35 +158,29 @@ public class Server {
             if (token == null) {
                 return;
             }
-
             AuthData auth = dataAccess.getAuth(token);
             if (auth == null) {
                 unauthorized(ctx);
                 return;
             }
-
             JoinGameRequest req = safeBody(ctx, JoinGameRequest.class);
             if (req == null || req.gameID == null) {
                 badRequest(ctx);
                 return;
             }
-
             if (req.playerColor == null || req.playerColor.isBlank()) {
                 badRequest(ctx);
                 return;
             }
-
             if (!req.playerColor.equals("WHITE") && !req.playerColor.equals("BLACK")) {
                 badRequest(ctx);
                 return;
             }
-
             GameData game = dataAccess.getGame(req.gameID);
             if (game == null) {
                 badRequest(ctx);
                 return;
             }
-
             String username = auth.username;
 
             if (req.playerColor.equals("WHITE")) {

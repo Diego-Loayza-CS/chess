@@ -197,10 +197,6 @@ public class ChessGame {
         return board;
     }
 
-    /**
-     * TODO
-     **/
-
     private void applyMove(ChessBoard board, ChessMove move) {
         ChessPosition start = move.getStartPosition();
         ChessPosition end = move.getEndPosition();
