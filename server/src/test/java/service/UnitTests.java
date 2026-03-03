@@ -191,16 +191,28 @@ public class UnitTests {
     }
 
     private int sizeOf(Object games) {
-        if (games == null) return 0;
-        if (games.getClass().isArray()) return Array.getLength(games);
-        if (games instanceof java.util.Collection<?> c) return c.size();
+        if (games == null) {
+            return 0;
+        }
+        if (games.getClass().isArray()) {
+            return Array.getLength(games);
+        }
+        if (games instanceof java.util.Collection<?> c) {
+            return c.size();
+        }
         return 0;
     }
 
     private Object firstOf(Object games) {
-        if (games.getClass().isArray()) return Array.get(games, 0);
-        if (games instanceof java.util.List<?> list) return list.get(0);
-        if (games instanceof java.util.Collection<?> c) return c.iterator().next();
+        if (games.getClass().isArray()) {
+            return Array.get(games, 0);
+        }
+        if (games instanceof java.util.List<?> list) {
+            return list.get(0);
+        }
+        if (games instanceof java.util.Collection<?> c) {
+            return c.iterator().next();
+        }
         throw new IllegalStateException("Unsupported games container");
     }
 }
