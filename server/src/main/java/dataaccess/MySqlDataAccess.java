@@ -5,6 +5,7 @@ import com.google.gson.Gson;
 import model.AuthData;
 import model.GameData;
 import model.UserData;
+import org.mindrot.jbcrypt.BCrypt;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -49,8 +50,9 @@ public class MySqlDataAccess implements DataAccess {
             throw new DataAccessException("invalid user");
         }
 
+        String hashedPassword = BCrypt.hashpw(user.password, BCrypt.gensalt());
         String statement = "INSERT INTO user (username, password, email) VALUES (?, ?, ?)";
-        executeUpdate(statement, user.username, user.password, user.email);
+        executeUpdate(statement, user.username, hashedPassword, user.email);
     }
 
     @Override
