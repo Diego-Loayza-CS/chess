@@ -4,12 +4,13 @@ import chess.ChessGame;
 import com.google.gson.Gson;
 import dataaccess.DataAccess;
 import dataaccess.DataAccessException;
-import dataaccess.MemoryDataAccess;
+import dataaccess.MySqlDataAccess;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import model.*;
 import model.request.*;
 import model.result.*;
+import org.mindrot.jbcrypt.BCrypt;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,10 +19,16 @@ import java.util.UUID;
 public class Server {
 
     private final Javalin javalin;
-    private final DataAccess dataAccess = new MemoryDataAccess();
+    private final DataAccess dataAccess;
     private final Gson gson = new Gson();
 
     public Server() {
+        try {
+            dataAccess = new MySqlDataAccess();
+        } catch (DataAccessException ex) {
+            throw new RuntimeException("unable to initialize database", ex);
+        }
+
         javalin = Javalin.create(config -> config.staticFiles.add("web"));
 
         javalin.exception(DataAccessException.class, (ex, ctx) -> {
@@ -81,7 +88,7 @@ public class Server {
             }
 
             UserData user = dataAccess.getUser(req.username);
-            if (user == null || user.password == null || !user.password.equals(req.password)) {
+            if (user == null || user.password == null || !BCrypt.checkpw(req.password, user.password)) {
                 unauthorized(ctx);
                 return;
             }
