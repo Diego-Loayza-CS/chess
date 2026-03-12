@@ -146,5 +146,38 @@ public class MySqlDataAccessTests {
                 dao.insertGame(new GameData(0, null, null, null, new ChessGame())));
     }
 
+    @Test
+    public void updateGamePositive() throws DataAccessException {
+        int id = dao.insertGame(new GameData(0, null, null, "game1", new ChessGame()));
+        GameData game = dao.getGame(id);
 
+        game.whiteUsername = "whitePlayer";
+        dao.updateGame(game);
+
+        GameData updated = dao.getGame(id);
+        assertEquals("whitePlayer", updated.whiteUsername);
+    }
+
+    @Test
+    public void updateGameNegative() {
+        assertThrows(DataAccessException.class, () ->
+                dao.updateGame(new GameData(99999, null, null, "bad", new ChessGame())));
+    }
+
+    @Test
+    public void listGamesPositive() throws DataAccessException {
+        dao.insertGame(new GameData(0, null, null, "g1", new ChessGame()));
+        dao.insertGame(new GameData(0, null, null, "g2", new ChessGame()));
+
+        List<GameData> games = dao.listGames();
+
+        assertEquals(2, games.size());
+    }
+
+    @Test
+    public void listGamesNegative() throws DataAccessException {
+        List<GameData> games = dao.listGames();
+        assertNotNull(games);
+        assertEquals(0, games.size());
+    }
 }
