@@ -50,4 +50,54 @@ public class MySqlDataAccessTests {
     public void getUserNegative() throws DataAccessException {
         assertNull(dao.getUser("missing"));
     }
+
+    @Test
+    public void insertUserPositive() throws DataAccessException {
+        dao.insertUser(new UserData("u1", "p1", "e1@test.com"));
+
+        UserData user = dao.getUser("u1");
+        assertNotNull(user);
+        assertEquals("u1", user.username);
+    }
+
+    @Test
+    public void insertUserNegative() throws DataAccessException {
+        dao.insertUser(new UserData("u1", "p1", "e1@test.com"));
+
+        assertThrows(DataAccessException.class, () ->
+                dao.insertUser(new UserData("u1", "p2", "e2@test.com")));
+    }
+
+    @Test
+    public void getAuthPositive() throws DataAccessException {
+        dao.insertUser(new UserData("u1", "p1", "e1@test.com"));
+        dao.insertAuth(new AuthData("t1", "u1"));
+
+        AuthData auth = dao.getAuth("t1");
+
+        assertNotNull(auth);
+        assertEquals("t1", auth.authToken);
+        assertEquals("u1", auth.username);
+    }
+
+    @Test
+    public void getAuthNegative() throws DataAccessException {
+        assertNull(dao.getAuth("missing"));
+    }
+
+    @Test
+    public void insertAuthPositive() throws DataAccessException {
+        dao.insertUser(new UserData("u1", "p1", "e1@test.com"));
+
+        dao.insertAuth(new AuthData("t1", "u1"));
+
+        assertNotNull(dao.getAuth("t1"));
+    }
+
+    @Test
+    public void insertAuthNegative() {
+        assertThrows(DataAccessException.class, () ->
+                dao.insertAuth(new AuthData(null, "u1")));
+    }
+
 }
