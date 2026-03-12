@@ -6,6 +6,7 @@ import model.AuthData;
 import model.UserData;
 import model.request.LoginRequest;
 import model.result.LoginResult;
+import org.mindrot.jbcrypt.BCrypt;
 
 import java.util.UUID;
 
@@ -22,7 +23,7 @@ public class SessionService {
         }
 
         UserData user = dataAccess.getUser(req.username);
-        if (user == null || user.password == null || !user.password.equals(req.password)) {
+        if (user == null || user.password == null || !BCrypt.checkpw(req.password, user.password)) {
             throw new SecurityException("unauthorized");
         }
 
