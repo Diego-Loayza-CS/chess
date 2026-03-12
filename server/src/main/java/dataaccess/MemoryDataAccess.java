@@ -7,6 +7,7 @@ import model.UserData;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.mindrot.jbcrypt.BCrypt;
 
 public class MemoryDataAccess implements DataAccess {
 
@@ -33,10 +34,17 @@ public class MemoryDataAccess implements DataAccess {
 
     @Override
     public void insertUser(UserData user) throws DataAccessException {
-        if (user == null || user.username == null) {
-            throw new DataAccessException("User or username was null");
+        if (user == null || user.username == null || user.password == null || user.email == null) {
+            throw new DataAccessException("User data was invalid");
         }
-        usersByUsername.put(user.username, user);
+
+        if (usersByUsername.containsKey(user.username)) {
+            throw new DataAccessException("Username already exists");
+        }
+
+        String hashedPassword = BCrypt.hashpw(user.password, BCrypt.gensalt());
+        UserData storedUser = new UserData(user.username, hashedPassword, user.email);
+        usersByUsername.put(user.username, storedUser);
     }
 
     @Override
