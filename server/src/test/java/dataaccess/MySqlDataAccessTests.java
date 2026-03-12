@@ -100,4 +100,51 @@ public class MySqlDataAccessTests {
                 dao.insertAuth(new AuthData(null, "u1")));
     }
 
+    @Test
+    public void deleteAuthPositive() throws DataAccessException {
+        dao.insertUser(new UserData("u1", "p1", "e1@test.com"));
+        dao.insertAuth(new AuthData("t1", "u1"));
+
+        dao.deleteAuth("t1");
+
+        assertNull(dao.getAuth("t1"));
+    }
+
+    @Test
+    public void deleteAuthNegative() {
+        assertDoesNotThrow(() -> dao.deleteAuth("missing"));
+    }
+
+    @Test
+    public void getGamePositive() throws DataAccessException {
+        int id = dao.insertGame(new GameData(0, null, null, "game1", new ChessGame()));
+
+        GameData game = dao.getGame(id);
+
+        assertNotNull(game);
+        assertEquals(id, game.gameID);
+        assertEquals("game1", game.gameName);
+        assertNotNull(game.game);
+    }
+
+    @Test
+    public void getGameNegative() throws DataAccessException {
+        assertNull(dao.getGame(99999));
+    }
+
+    @Test
+    public void insertGamePositive() throws DataAccessException {
+        int id = dao.insertGame(new GameData(0, null, null, "game1", new ChessGame()));
+
+        assertTrue(id > 0);
+        assertNotNull(dao.getGame(id));
+    }
+
+    @Test
+    public void insertGameNegative() {
+        assertThrows(DataAccessException.class, () ->
+                dao.insertGame(new GameData(0, null, null, null, new ChessGame())));
+    }
+
+
 }
