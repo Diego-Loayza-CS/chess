@@ -30,7 +30,7 @@ public class PreloginClient {
                 default -> "Unknown command. Type help to see available commands.";
             };
         } catch (Exception ex) {
-            return "Error: " + ex.getMessage();
+            return ex.getMessage();
         }
     }
 
