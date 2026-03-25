@@ -14,19 +14,20 @@ public class PreloginClient {
 
     public String eval(String input) {
         try {
-            var tokens = input == null ? new String[0] : input.trim().split("\\s+");
-            if (tokens.length == 0 || tokens[0].isBlank()) {
+            String trimmed = input == null ? "" : input.trim();
+            if (trimmed.isEmpty()) {
                 return help();
             }
 
-            var command = tokens[0].toLowerCase();
+            String[] tokens = trimmed.split("\\s+");
+            String command = tokens[0].toLowerCase();
 
             return switch (command) {
                 case "help" -> help();
                 case "quit" -> quit();
                 case "login" -> login(tokens);
                 case "register" -> register(tokens);
-                default -> "Unknown command. Type help.";
+                default -> "Unknown command. Type help to see available commands.";
             };
         } catch (Exception ex) {
             return "Error: " + ex.getMessage();
@@ -35,10 +36,11 @@ public class PreloginClient {
 
     private String help() {
         return """
-                help - show available commands
-                quit - exit the program
-                login <username> <password>
-                register <username> <password> <email>
+                Available commands:
+                  help
+                  quit
+                  login <username> <password>
+                  register <username> <password> <email>
                 """;
     }
 
@@ -56,7 +58,7 @@ public class PreloginClient {
         state.setAuthToken(auth.authToken);
         state.setUsername(auth.username);
         state.setMode(State.Mode.POSTLOGIN);
-        return "Logged in as " + auth.username;
+        return "Logged in as " + auth.username + ".";
     }
 
     private String register(String[] tokens) throws Exception {
@@ -68,6 +70,6 @@ public class PreloginClient {
         state.setAuthToken(auth.authToken);
         state.setUsername(auth.username);
         state.setMode(State.Mode.POSTLOGIN);
-        return "Registered and logged in as " + auth.username;
+        return "Registered and logged in as " + auth.username + ".";
     }
 }

@@ -7,12 +7,11 @@ import java.util.Scanner;
 public class Repl {
     private final Scanner scanner = new Scanner(System.in);
     private final State state = new State();
-    private final ServerFacade server;
     private final PreloginClient preloginClient;
     private final PostloginClient postloginClient;
 
     public Repl(String serverUrl) {
-        this.server = new ServerFacade(serverUrl);
+        ServerFacade server = new ServerFacade(serverUrl);
         this.preloginClient = new PreloginClient(server, state);
         this.postloginClient = new PostloginClient(server, state);
     }
