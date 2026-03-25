@@ -18,12 +18,13 @@ public class PostloginClient {
 
     public String eval(String input) {
         try {
-            var tokens = input == null ? new String[0] : input.trim().split("\\s+");
-            if (tokens.length == 0 || tokens[0].isBlank()) {
+            String trimmed = input == null ? "" : input.trim();
+            if (trimmed.isEmpty()) {
                 return help();
             }
 
-            var command = tokens[0].toLowerCase();
+            String[] tokens = trimmed.split("\\s+");
+            String command = tokens[0].toLowerCase();
 
             return switch (command) {
                 case "help" -> help();
@@ -32,7 +33,7 @@ public class PostloginClient {
                 case "list" -> listGamesCommand(tokens);
                 case "play" -> playGame(tokens);
                 case "observe" -> observeGame(tokens);
-                default -> "Unknown command. Type help.";
+                default -> "Unknown command. Type help to see available commands.";
             };
         } catch (Exception ex) {
             return "Error: " + ex.getMessage();
@@ -41,12 +42,13 @@ public class PostloginClient {
 
     private String help() {
         return """
-                help - show available commands
-                logout
-                create game <game name>
-                list games
-                play <game number> <WHITE|BLACK>
-                observe <game number>
+                Available commands:
+                  help
+                  logout
+                  create game <game name>
+                  list games
+                  play <game number> <WHITE|BLACK>
+                  observe <game number>
                 """;
     }
 
@@ -63,7 +65,7 @@ public class PostloginClient {
 
         String gameName = joinTail(tokens, 1);
         int gameID = server.createGame(state.getAuthToken(), gameName);
-        return "Created game with id " + gameID;
+        return "Created game with id " + gameID + ".";
     }
 
     private String createGameCommand(String[] tokens) throws Exception {
@@ -73,31 +75,14 @@ public class PostloginClient {
             }
             String gameName = joinTail(tokens, 2);
             int gameID = server.createGame(state.getAuthToken(), gameName);
-            return "Created game with id " + gameID;
+            return "Created game with id " + gameID + ".";
         }
         return createGame(tokens);
     }
 
     private String listGames() throws Exception {
         lastListedGames = server.listGames(state.getAuthToken());
-
-        if (lastListedGames.isEmpty()) {
-            return "No games found.";
-        }
-
-        StringBuilder out = new StringBuilder();
-        for (int i = 0; i < lastListedGames.size(); i++) {
-            GameListItem g = lastListedGames.get(i);
-            out.append(i + 1)
-                    .append(". ")
-                    .append(g.gameName)
-                    .append(" | white: ")
-                    .append(g.whiteUsername == null ? "-" : g.whiteUsername)
-                    .append(" | black: ")
-                    .append(g.blackUsername == null ? "-" : g.blackUsername)
-                    .append("\n");
-        }
-        return out.toString();
+        return formatGameList(lastListedGames);
     }
 
     private String listGamesCommand(String[] tokens) throws Exception {
@@ -115,10 +100,14 @@ public class PostloginClient {
             return "Usage: play <game number> <WHITE|BLACK>";
         }
 
-        int number = Integer.parseInt(tokens[1]);
+        int number = parseGameNumber(tokens[1]);
         String color = tokens[2].toUpperCase();
 
-        GameListItem game = getListedGame(number);
+        if (!color.equals("WHITE") && !color.equals("BLACK")) {
+            return "Usage: play <game number> <WHITE|BLACK>";
+        }
+
+        GameListItem game = requireListedGame(number);
         server.joinGame(state.getAuthToken(), game.gameID, color);
 
         boolean whitePerspective = !color.equals("BLACK");
@@ -130,16 +119,48 @@ public class PostloginClient {
             return "Usage: observe <game number>";
         }
 
-        int number = Integer.parseInt(tokens[1]);
-        getListedGame(number);
+        int number = parseGameNumber(tokens[1]);
+        requireListedGame(number);
         return ChessBoardPrinter.drawBoard(true);
     }
 
-    private GameListItem getListedGame(int number) {
+    private int parseGameNumber(String token) {
+        try {
+            return Integer.parseInt(token);
+        } catch (NumberFormatException ex) {
+            throw new IllegalArgumentException("invalid game number");
+        }
+    }
+
+    private GameListItem requireListedGame(int number) {
         if (number < 1 || number > lastListedGames.size()) {
             throw new IllegalArgumentException("invalid game number");
         }
         return lastListedGames.get(number - 1);
+    }
+
+    private String formatGameList(List<GameListItem> games) {
+        if (games.isEmpty()) {
+            return "No games found.";
+        }
+
+        StringBuilder out = new StringBuilder();
+        for (int i = 0; i < games.size(); i++) {
+            GameListItem g = games.get(i);
+            out.append(i + 1)
+                    .append(". ")
+                    .append(g.gameName)
+                    .append(" | white: ")
+                    .append(displayName(g.whiteUsername))
+                    .append(" | black: ")
+                    .append(displayName(g.blackUsername))
+                    .append("\n");
+        }
+        return out.toString().trim();
+    }
+
+    private String displayName(String username) {
+        return username == null ? "-" : username;
     }
 
     private String joinTail(String[] tokens, int start) {
