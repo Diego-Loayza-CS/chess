@@ -71,7 +71,7 @@ public class ChessBoardPrinter {
     }
 
     private static void drawSquare(StringBuilder out, ChessBoard board, int row, int col) {
-        boolean lightSquare = (row + col) % 2 == 0;
+        boolean lightSquare = (row + col) % 2 != 0;
         out.append(lightSquare ? SET_BG_COLOR_WHITE : SET_BG_COLOR_DARK_GREY);
 
         ChessPiece piece = board.getPiece(new ChessPosition(row, col));
