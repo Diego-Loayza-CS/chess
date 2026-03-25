@@ -44,4 +44,37 @@ public class ServerFacadeTests {
         assertNotNull(auth.authToken);
     }
 
+    @Test
+    public void registerNegative() {
+        assertThrows(Exception.class, () -> facade.register(null, PASSWORD, EMAIL));
+    }
+
+    @Test
+    public void loginPositive() throws Exception {
+        facade.register(USERNAME, PASSWORD, EMAIL);
+
+        AuthData auth = facade.login(USERNAME, PASSWORD);
+
+        assertNotNull(auth);
+        assertEquals(USERNAME, auth.username);
+        assertNotNull(auth.authToken);
+    }
+
+    @Test
+    public void loginNegative() throws Exception {
+        facade.register(USERNAME, PASSWORD, EMAIL);
+        assertThrows(Exception.class, () -> facade.login(USERNAME, "wrongPassword"));
+    }
+
+    @Test
+    public void logoutPositive() throws Exception {
+        AuthData auth = facade.register(USERNAME, PASSWORD, EMAIL);
+        assertDoesNotThrow(() -> facade.logout(auth.authToken));
+    }
+
+    @Test
+    public void logoutNegative() {
+        assertThrows(Exception.class, () -> facade.logout("bad-token"));
+    }
+
 }
