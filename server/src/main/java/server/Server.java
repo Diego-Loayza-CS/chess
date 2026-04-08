@@ -21,6 +21,7 @@ public class Server {
     private final Javalin javalin;
     private final DataAccess dataAccess;
     private final Gson gson = new Gson();
+    private final WebSocketHandler webSocketHandler;
 
     public Server() {
         try {
@@ -28,6 +29,8 @@ public class Server {
         } catch (DataAccessException ex) {
             throw new RuntimeException("unable to initialize database", ex);
         }
+
+        webSocketHandler = new WebSocketHandler(dataAccess);
 
         javalin = Javalin.create(config -> config.staticFiles.add("web"));
 
@@ -44,6 +47,13 @@ public class Server {
         registerUserRoutes();
         registerSessionRoutes();
         registerGameRoutes();
+        registerWebSocketRoutes();
+    }
+
+    private void registerWebSocketRoutes() {
+        javalin.ws("/ws", ws -> {
+            ws.onMessage(webSocketHandler::onMessage);
+        });
     }
 
     private void registerDbRoutes() {
