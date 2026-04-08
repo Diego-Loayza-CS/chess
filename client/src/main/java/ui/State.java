@@ -10,6 +10,8 @@ public class State {
     private Mode mode = Mode.PRELOGIN;
     private String authToken;
     private String username;
+    private boolean inGameplay = false;
+    private Integer currentGameID;
 
     public Mode getMode() {
         return mode;
@@ -35,9 +37,27 @@ public class State {
         this.username = username;
     }
 
+    public boolean isInGameplay() {
+        return inGameplay;
+    }
+
+    public void setInGameplay(boolean inGameplay) {
+        this.inGameplay = inGameplay;
+    }
+
+    public Integer getCurrentGameID() {
+        return currentGameID;
+    }
+
+    public void setCurrentGameID(Integer currentGameID) {
+        this.currentGameID = currentGameID;
+    }
+
     public void clearSession() {
         this.authToken = null;
         this.username = null;
         this.mode = Mode.PRELOGIN;
+        this.inGameplay = false;
+        this.currentGameID = null;
     }
 }

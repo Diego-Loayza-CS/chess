@@ -9,11 +9,14 @@ public class Repl {
     private final State state = new State();
     private final PreloginClient preloginClient;
     private final PostloginClient postloginClient;
+    private final GameplayClient gameplayClient;
 
     public Repl(String serverUrl) {
         ServerFacade server = new ServerFacade(serverUrl);
         this.preloginClient = new PreloginClient(server, state);
-        this.postloginClient = new PostloginClient(server, state);
+        this.postloginClient = new PostloginClient(server, state, serverUrl);
+        this.gameplayClient = new GameplayClient(serverUrl, state);
+        this.postloginClient.setGameplayClient(gameplayClient);
     }
 
     public void run() {
@@ -24,7 +27,9 @@ public class Repl {
                 printPrompt();
                 String input = scanner.nextLine();
 
-                if (state.getMode() == State.Mode.PRELOGIN) {
+                if (state.isInGameplay()) {
+                    System.out.println(gameplayClient.eval(input));
+                } else if (state.getMode() == State.Mode.PRELOGIN) {
                     System.out.println(preloginClient.eval(input));
                 } else if (state.getMode() == State.Mode.POSTLOGIN) {
                     System.out.println(postloginClient.eval(input));
@@ -38,7 +43,9 @@ public class Repl {
     }
 
     private void printPrompt() {
-        if (state.getMode() == State.Mode.PRELOGIN) {
+        if (state.isInGameplay()) {
+            System.out.print("[GAMEPLAY] >>> ");
+        } else if (state.getMode() == State.Mode.PRELOGIN) {
             System.out.print("[LOGGED_OUT] >>> ");
         } else {
             System.out.print("[" + state.getUsername() + "] >>> ");
