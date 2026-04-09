@@ -25,7 +25,29 @@ public class WebSocketCommunicator {
 
         String wsUrl = serverUrl.replace("http://", "ws://").replace("https://", "wss://") + "/ws";
         WebSocketContainer container = ContainerProvider.getWebSocketContainer();
-        this.session = container.connectToServer(this, URI.create(wsUrl));
+        container.connectToServer(this, URI.create(wsUrl));
+    }
+
+    @OnOpen
+    public void onOpen(Session session) {
+        this.session = session;
+    }
+
+    @OnMessage
+    public void onMessage(String messageJson) {
+        try {
+            ServerMessage base = gson.fromJson(messageJson, ServerMessage.class);
+            if (base == null || base.getServerMessageType() == null) {
+                return;
+            }
+
+            switch (base.getServerMessageType()) {
+                case LOAD_GAME -> notificationHandler.notifyLoadGame(gson.fromJson(messageJson, LoadGameMessage.class));
+                case ERROR -> notificationHandler.notifyError(gson.fromJson(messageJson, ErrorMessage.class));
+                case NOTIFICATION -> notificationHandler.notifyNotification(gson.fromJson(messageJson, NotificationMessage.class));
+            }
+        } catch (Exception ignored) {
+        }
     }
 
     public void connect(String authToken, Integer gameID) throws Exception {
@@ -44,30 +66,19 @@ public class WebSocketCommunicator {
         send(new MakeMoveCommand(authToken, gameID, move));
     }
 
-    public void close() throws Exception {
-        if (session != null && session.isOpen()) {
-            session.close();
+    public void close() {
+        try {
+            if (session != null && session.isOpen()) {
+                session.close();
+            }
+        } catch (Exception ignored) {
         }
     }
 
     private void send(Object command) throws Exception {
-        session.getBasicRemote().sendText(gson.toJson(command));
-    }
-
-    @OnMessage
-    public void onMessage(String messageJson) {
-        try {
-            ServerMessage base = gson.fromJson(messageJson, ServerMessage.class);
-            if (base == null || base.serverMessageType == null) {
-                return;
-            }
-
-            switch (base.getServerMessageType()) {
-                case LOAD_GAME -> notificationHandler.notifyLoadGame(gson.fromJson(messageJson, LoadGameMessage.class));
-                case ERROR -> notificationHandler.notifyError(gson.fromJson(messageJson, ErrorMessage.class));
-                case NOTIFICATION -> notificationHandler.notifyNotification(gson.fromJson(messageJson, NotificationMessage.class));
-            }
-        } catch (Exception ignored) {
+        if (session == null || !session.isOpen()) {
+            throw new Exception("The connection has been closed.");
         }
+        session.getBasicRemote().sendText(gson.toJson(command));
     }
 }

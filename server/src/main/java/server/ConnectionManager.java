@@ -1,9 +1,10 @@
 package server;
 
 import com.google.gson.Gson;
-import io.javalin.websocket.WsMessageContext;
+import io.javalin.websocket.WsContext;
 import websocket.messages.ServerMessage;
 
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -12,9 +13,9 @@ public class ConnectionManager {
     public static class Connection {
         public final String username;
         public final Integer gameID;
-        public final WsMessageContext session;
+        public final WsContext session;
 
-        public Connection(String username, Integer gameID, WsMessageContext session) {
+        public Connection(String username, Integer gameID, WsContext session) {
             this.username = username;
             this.gameID = gameID;
             this.session = session;
@@ -24,7 +25,7 @@ public class ConnectionManager {
     private final ConcurrentHashMap<Integer, ConcurrentHashMap<String, Connection>> connections = new ConcurrentHashMap<>();
     private final Gson gson = new Gson();
 
-    public void add(String username, Integer gameID, WsMessageContext session) {
+    public void add(String username, Integer gameID, WsContext session) {
         connections.computeIfAbsent(gameID, id -> new ConcurrentHashMap<>())
                 .put(username, new Connection(username, gameID, session));
     }
@@ -53,7 +54,9 @@ public class ConnectionManager {
             return;
         }
 
-        connection.session.send(gson.toJson(message));
+        if (!safeSend(connection, gson.toJson(message))) {
+            remove(username, gameID);
+        }
     }
 
     public void broadcastToOthers(String excludeUsername, Integer gameID, ServerMessage message) {
@@ -63,12 +66,24 @@ public class ConnectionManager {
         }
 
         String json = gson.toJson(message);
-        for (Map.Entry<String, Connection> entry : gameConnections.entrySet()) {
-            if (entry.getKey().equals(excludeUsername)) {
+
+        Iterator<Map.Entry<String, Connection>> iterator = gameConnections.entrySet().iterator();
+        while (iterator.hasNext()) {
+            var entry = iterator.next();
+            String username = entry.getKey();
+            Connection connection = entry.getValue();
+
+            if (username.equals(excludeUsername)) {
                 continue;
             }
 
-            entry.getValue().session.send(json);
+            if (!safeSend(connection, json)) {
+                iterator.remove();
+            }
+        }
+
+        if (gameConnections.isEmpty()) {
+            connections.remove(gameID);
         }
     }
 
@@ -79,8 +94,28 @@ public class ConnectionManager {
         }
 
         String json = gson.toJson(message);
-        for (Connection connection : gameConnections.values()) {
+
+        Iterator<Map.Entry<String, Connection>> iterator = gameConnections.entrySet().iterator();
+        while (iterator.hasNext()) {
+            var entry = iterator.next();
+            Connection connection = entry.getValue();
+
+            if (!safeSend(connection, json)) {
+                iterator.remove();
+            }
+        }
+
+        if (gameConnections.isEmpty()) {
+            connections.remove(gameID);
+        }
+    }
+
+    private boolean safeSend(Connection connection, String json) {
+        try {
             connection.session.send(json);
+            return true;
+        } catch (Exception ex) {
+            return false;
         }
     }
 }

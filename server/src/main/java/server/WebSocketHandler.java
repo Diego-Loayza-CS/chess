@@ -174,29 +174,18 @@ public class WebSocketHandler {
         }
 
         String username = auth.username;
-        boolean changedGame = false;
 
         if (username.equals(gameData.whiteUsername)) {
             gameData.whiteUsername = null;
-            changedGame = true;
+            dataAccess.updateGame(gameData);
         } else if (username.equals(gameData.blackUsername)) {
             gameData.blackUsername = null;
-            changedGame = true;
-        }
-
-        if (changedGame) {
             dataAccess.updateGame(gameData);
-            connections.broadcastToAll(command.getGameID(), new LoadGameMessage(gameData));
         }
 
         connections.remove(username, command.getGameID());
         connections.broadcastToOthers(username, command.getGameID(),
                 new NotificationMessage(username + " left the game"));
-
-        try {
-            ctx.session.close();
-        } catch (Exception ignored) {
-        }
     }
 
     private void resign(WsMessageContext ctx, ResignCommand command) throws DataAccessException {
