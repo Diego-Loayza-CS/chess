@@ -62,7 +62,7 @@ public class WebSocketCommunicator {
                 return;
             }
 
-            switch (base.serverMessageType) {
+            switch (base.getServerMessageType()) {
                 case LOAD_GAME -> notificationHandler.notifyLoadGame(gson.fromJson(messageJson, LoadGameMessage.class));
                 case ERROR -> notificationHandler.notifyError(gson.fromJson(messageJson, ErrorMessage.class));
                 case NOTIFICATION -> notificationHandler.notifyNotification(gson.fromJson(messageJson, NotificationMessage.class));
