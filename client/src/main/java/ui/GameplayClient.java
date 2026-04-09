@@ -98,9 +98,11 @@ public class GameplayClient implements NotificationHandler {
         if (communicator != null) {
             communicator.leave(state.getAuthToken(), gameID);
             communicator.close();
+            communicator = null;
         }
         state.setInGameplay(false);
         state.setCurrentGameID(null);
+        currentGame = null;
         return "Left game.";
     }
 
@@ -150,17 +152,21 @@ public class GameplayClient implements NotificationHandler {
         }
 
         ChessPosition position = parsePosition(tokens[1]);
-        ChessPiece piece = currentGame.getBoard().getPiece(position);
-        if (piece == null) {
-            return "Error: no piece at that position.";
+        Collection<ChessMove> legalMoves = currentGame.validMoves(position);
+        if (legalMoves == null || legalMoves.isEmpty()) {
+            ChessPiece piece = currentGame.getBoard().getPiece(position);
+            if (piece == null) {
+                return "Error: no piece at that position.";
+            }
         }
 
-        Collection<ChessMove> moves = piece.pieceMoves(currentGame.getBoard(), position);
         List<ChessPosition> highlights = new ArrayList<>();
         highlights.add(position);
 
-        for (ChessMove move : moves) {
-            highlights.add(move.getEndPosition());
+        if (legalMoves != null) {
+            for (ChessMove move : legalMoves) {
+                highlights.add(move.getEndPosition());
+            }
         }
 
         return ChessBoardPrinter.drawBoard(currentGame.getBoard(), whitePerspective, highlights);

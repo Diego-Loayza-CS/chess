@@ -9,7 +9,9 @@ import io.javalin.websocket.WsMessageContext;
 import model.AuthData;
 import model.GameData;
 import websocket.commands.ConnectCommand;
+import websocket.commands.LeaveCommand;
 import websocket.commands.MakeMoveCommand;
+import websocket.commands.ResignCommand;
 import websocket.commands.UserGameCommand;
 import websocket.messages.ErrorMessage;
 import websocket.messages.LoadGameMessage;
@@ -38,7 +40,8 @@ public class WebSocketHandler {
             switch (baseCommand.getCommandType()) {
                 case CONNECT -> connect(ctx, gson.fromJson(messageJson, ConnectCommand.class));
                 case MAKE_MOVE -> makeMove(ctx, gson.fromJson(messageJson, MakeMoveCommand.class));
-                case LEAVE, RESIGN -> sendError(ctx, "Error: command not implemented yet");
+                case LEAVE -> leave(ctx, gson.fromJson(messageJson, LeaveCommand.class));
+                case RESIGN -> resign(ctx, gson.fromJson(messageJson, ResignCommand.class));
             }
         } catch (Exception ex) {
             sendError(ctx, "Error: " + ex.getMessage());
@@ -150,6 +153,87 @@ public class WebSocketHandler {
             connections.broadcastToAll(command.getGameID(),
                     new NotificationMessage(sideToMoveName + " is in check"));
         }
+    }
+
+    private void leave(WsMessageContext ctx, LeaveCommand command) throws DataAccessException {
+        if (command == null || command.getAuthToken() == null || command.getGameID() == null) {
+            sendError(ctx, "Error: invalid leave command");
+            return;
+        }
+
+        AuthData auth = dataAccess.getAuth(command.getAuthToken());
+        if (auth == null) {
+            sendError(ctx, "Error: unauthorized");
+            return;
+        }
+
+        GameData gameData = dataAccess.getGame(command.getGameID());
+        if (gameData == null) {
+            sendError(ctx, "Error: game does not exist");
+            return;
+        }
+
+        String username = auth.username;
+        boolean changedGame = false;
+
+        if (username.equals(gameData.whiteUsername)) {
+            gameData.whiteUsername = null;
+            changedGame = true;
+        } else if (username.equals(gameData.blackUsername)) {
+            gameData.blackUsername = null;
+            changedGame = true;
+        }
+
+        if (changedGame) {
+            dataAccess.updateGame(gameData);
+            connections.broadcastToAll(command.getGameID(), new LoadGameMessage(gameData));
+        }
+
+        connections.remove(username, command.getGameID());
+        connections.broadcastToOthers(username, command.getGameID(),
+                new NotificationMessage(username + " left the game"));
+
+        try {
+            ctx.session.close();
+        } catch (Exception ignored) {
+        }
+    }
+
+    private void resign(WsMessageContext ctx, ResignCommand command) throws DataAccessException {
+        if (command == null || command.getAuthToken() == null || command.getGameID() == null) {
+            sendError(ctx, "Error: invalid resign command");
+            return;
+        }
+
+        AuthData auth = dataAccess.getAuth(command.getAuthToken());
+        if (auth == null) {
+            sendError(ctx, "Error: unauthorized");
+            return;
+        }
+
+        GameData gameData = dataAccess.getGame(command.getGameID());
+        if (gameData == null) {
+            sendError(ctx, "Error: game does not exist");
+            return;
+        }
+
+        if (gameData.gameOver) {
+            sendError(ctx, "Error: game is already over");
+            return;
+        }
+
+        String username = auth.username;
+        boolean isPlayer = username.equals(gameData.whiteUsername) || username.equals(gameData.blackUsername);
+        if (!isPlayer) {
+            sendError(ctx, "Error: observers cannot resign");
+            return;
+        }
+
+        gameData.gameOver = true;
+        dataAccess.updateGame(gameData);
+
+        connections.broadcastToAll(command.getGameID(),
+                new NotificationMessage(username + " resigned the game"));
     }
 
     private String describeMove(ChessMove move) {
