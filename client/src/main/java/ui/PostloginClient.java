@@ -9,11 +9,18 @@ import java.util.List;
 public class PostloginClient {
     private final ServerFacade server;
     private final State state;
+    private final String serverUrl;
+    private GameplayClient gameplayClient;
     private List<GameListItem> lastListedGames = new ArrayList<>();
 
-    public PostloginClient(ServerFacade server, State state) {
+    public PostloginClient(ServerFacade server, State state, String serverUrl) {
         this.server = server;
         this.state = state;
+        this.serverUrl = serverUrl;
+    }
+
+    public void setGameplayClient(GameplayClient gameplayClient) {
+        this.gameplayClient = gameplayClient;
     }
 
     public String eval(String input) {
@@ -36,7 +43,7 @@ public class PostloginClient {
                 default -> "Unknown command. Type help to see available commands.";
             };
         } catch (Exception ex) {
-            return ex.getMessage();
+            return "Error: " + ex.getMessage();
         }
     }
 
@@ -110,8 +117,9 @@ public class PostloginClient {
         GameListItem game = requireListedGame(number);
         server.joinGame(state.getAuthToken(), game.gameID, color);
 
-        boolean whitePerspective = !color.equals("BLACK");
-        return ChessBoardPrinter.drawBoard(whitePerspective);
+        state.setInGameplay(true);
+        state.setCurrentGameID(game.gameID);
+        return gameplayClient.enterAsPlayer(game, color);
     }
 
     private String observeGame(String[] tokens) throws Exception {
@@ -120,8 +128,11 @@ public class PostloginClient {
         }
 
         int number = parseGameNumber(tokens[1]);
-        requireListedGame(number);
-        return ChessBoardPrinter.drawBoard(true);
+        GameListItem game = requireListedGame(number);
+
+        state.setInGameplay(true);
+        state.setCurrentGameID(game.gameID);
+        return gameplayClient.enterAsObserver(game);
     }
 
     private int parseGameNumber(String token) {

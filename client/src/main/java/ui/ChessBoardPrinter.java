@@ -5,13 +5,26 @@ import chess.ChessGame;
 import chess.ChessPiece;
 import chess.ChessPosition;
 
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
+
 import static ui.EscapeSequences.*;
 
 public class ChessBoardPrinter {
 
     public static String drawBoard(boolean whitePerspective) {
         ChessGame game = new ChessGame();
-        ChessBoard board = game.getBoard();
+        return drawBoard(game.getBoard(), whitePerspective, null);
+    }
+
+    public static String drawBoard(ChessBoard board, boolean whitePerspective, Collection<ChessPosition> highlighted) {
+        Set<String> highlights = new HashSet<>();
+        if (highlighted != null) {
+            for (ChessPosition p : highlighted) {
+                highlights.add(key(p.getRow(), p.getColumn()));
+            }
+        }
 
         StringBuilder out = new StringBuilder();
         out.append(SET_BG_COLOR_BLACK).append(SET_TEXT_COLOR_WHITE);
@@ -19,13 +32,13 @@ public class ChessBoardPrinter {
         if (whitePerspective) {
             drawFiles(out, true);
             for (int row = 8; row >= 1; row--) {
-                drawRow(out, board, row, true);
+                drawRow(out, board, row, true, highlights);
             }
             drawFiles(out, true);
         } else {
             drawFiles(out, false);
             for (int row = 1; row <= 8; row++) {
-                drawRow(out, board, row, false);
+                drawRow(out, board, row, false, highlights);
             }
             drawFiles(out, false);
         }
@@ -51,17 +64,17 @@ public class ChessBoardPrinter {
         out.append("   ").append("\n");
     }
 
-    private static void drawRow(StringBuilder out, ChessBoard board, int row, boolean whitePerspective) {
+    private static void drawRow(StringBuilder out, ChessBoard board, int row, boolean whitePerspective, Set<String> highlights) {
         out.append(SET_BG_COLOR_LIGHT_GREY).append(SET_TEXT_COLOR_BLACK);
         out.append(" ").append(row).append(" ");
 
         if (whitePerspective) {
             for (int col = 1; col <= 8; col++) {
-                drawSquare(out, board, row, col);
+                drawSquare(out, board, row, col, highlights);
             }
         } else {
             for (int col = 8; col >= 1; col--) {
-                drawSquare(out, board, row, col);
+                drawSquare(out, board, row, col, highlights);
             }
         }
 
@@ -70,9 +83,15 @@ public class ChessBoardPrinter {
         out.append("\n");
     }
 
-    private static void drawSquare(StringBuilder out, ChessBoard board, int row, int col) {
-        boolean lightSquare = (row + col) % 2 != 0;
-        out.append(lightSquare ? SET_BG_COLOR_WHITE : SET_BG_COLOR_DARK_GREY);
+    private static void drawSquare(StringBuilder out, ChessBoard board, int row, int col, Set<String> highlights) {
+        boolean lightSquare = (row + col) % 2 == 0;
+        boolean highlighted = highlights.contains(key(row, col));
+
+        if (highlighted) {
+            out.append(lightSquare ? SET_BG_COLOR_GREEN : SET_BG_COLOR_DARK_GREEN);
+        } else {
+            out.append(lightSquare ? SET_BG_COLOR_WHITE : SET_BG_COLOR_DARK_GREY);
+        }
 
         ChessPiece piece = board.getPiece(new ChessPosition(row, col));
         if (piece == null) {
@@ -98,5 +117,9 @@ public class ChessBoardPrinter {
             case ROOK -> "R";
             case PAWN -> "P";
         };
+    }
+
+    private static String key(int row, int col) {
+        return row + "," + col;
     }
 }
