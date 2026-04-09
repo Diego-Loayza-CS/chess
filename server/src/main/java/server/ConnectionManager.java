@@ -1,7 +1,7 @@
 package server;
 
 import com.google.gson.Gson;
-import io.javalin.websocket.WsContext;
+import io.javalin.websocket.WsMessageContext;
 import websocket.messages.ServerMessage;
 
 import java.util.Map;
@@ -12,9 +12,9 @@ public class ConnectionManager {
     public static class Connection {
         public final String username;
         public final Integer gameID;
-        public final WsContext session;
+        public final WsMessageContext session;
 
-        public Connection(String username, Integer gameID, WsContext session) {
+        public Connection(String username, Integer gameID, WsMessageContext session) {
             this.username = username;
             this.gameID = gameID;
             this.session = session;
@@ -24,7 +24,7 @@ public class ConnectionManager {
     private final ConcurrentHashMap<Integer, ConcurrentHashMap<String, Connection>> connections = new ConcurrentHashMap<>();
     private final Gson gson = new Gson();
 
-    public void add(String username, Integer gameID, WsContext session) {
+    public void add(String username, Integer gameID, WsMessageContext session) {
         connections.computeIfAbsent(gameID, id -> new ConcurrentHashMap<>())
                 .put(username, new Connection(username, gameID, session));
     }
@@ -53,9 +53,7 @@ public class ConnectionManager {
             return;
         }
 
-        if (connection.session.session.isOpen()) {
-            connection.session.send(gson.toJson(message));
-        }
+        connection.session.send(gson.toJson(message));
     }
 
     public void broadcastToOthers(String excludeUsername, Integer gameID, ServerMessage message) {
@@ -70,10 +68,7 @@ public class ConnectionManager {
                 continue;
             }
 
-            var connection = entry.getValue();
-            if (connection.session.session.isOpen()) {
-                connection.session.send(json);
-            }
+            entry.getValue().session.send(json);
         }
     }
 
@@ -85,9 +80,7 @@ public class ConnectionManager {
 
         String json = gson.toJson(message);
         for (Connection connection : gameConnections.values()) {
-            if (connection.session.session.isOpen()) {
-                connection.session.send(json);
-            }
+            connection.session.send(json);
         }
     }
 }
